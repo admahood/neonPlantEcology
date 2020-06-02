@@ -63,6 +63,7 @@ get_longform_cover <- function(neon_div_object,
                                trace_cover=0.5,
                                scale = "plot",
                                fix_unks = FALSE){
+  require(tidyverse)
   if(scale == "plot"){
     cover <- neon_div_object$div_1m2Data %>%
       mutate(endDate = as.Date(endDate)) %>%
@@ -234,7 +235,7 @@ vegify <- function(neon_div_object,
                    trace_cover = 0.5,
                    fix_unks = FALSE,
                    binary=FALSE) {
-
+  require(tidyverse)
   if(!binary){
     return(
       neon_div_object %>%
@@ -302,7 +303,8 @@ get_diversity_info <- function(neon_div_object,
                                fix_unks = FALSE,
                                families = "Poaceae",
                                species = "Bromus tectorum") {
-
+  require(tidyverse)
+  require(vegan)
   # Data wrangling =============================================================
 
   full_on_cover <- get_longform_cover(neon_div_object,
