@@ -20,6 +20,7 @@
 #' diversity_object <- download_plant_div(sites = "SRER")
 #' @export
 download_plant_div <- function(sites = "SRER"){
+  require(neonUtilities)
   loadByProduct(dpID = "DP1.10058.001",
                 site = sites,
                 check.size = F) -> x
