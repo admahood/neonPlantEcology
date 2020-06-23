@@ -13,8 +13,8 @@ vegify(
 )
 }
 \arguments{
-\item{neon_div_object}{the raw diversity data downloaded using
-neondiversity::download_plant_div() or #' the function
+\item{neon_div_object}{the raw vegan::diversity data downloaded using
+neonvegan::diversity::download_plant_div() or #' the function
 neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{scale}{what level of aggregation? This can be "1m", "10m", "100m", or "plot",

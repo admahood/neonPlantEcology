@@ -2,7 +2,7 @@
 % Please edit documentation in R/diversity_data_prep.R
 \name{get_diversity_info}
 \alias{get_diversity_info}
-\title{Get plant biodiversity information for NEON plots}
+\title{Get plant biovegan::diversity information for NEON plots}
 \usage{
 get_diversity_info(
   neon_div_object,
@@ -10,12 +10,12 @@ get_diversity_info(
   trace_cover = 0.5,
   fix_unks = FALSE,
   families = "Poaceae",
-  species = "Bromus tectorum"
+  spp = "Bromus tectorum"
 )
 }
 \arguments{
-\item{neon_div_object}{the raw diversity data downloaded using
-neondiversity::download_plant_div() or #' the function
+\item{neon_div_object}{the raw vegan::diversity data downloaded using
+neonvegan::diversity::download_plant_div() or #' the function
 neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{scale}{what level of aggregation? This can be "1m", "10m", "100m", or "plot",
@@ -34,7 +34,7 @@ This can be a concatenated vector if the user want more than one family.}
 This can be a concatenated vector if the user want more than one species.}
 }
 \description{
-get_diversity_info calculates various biodiversity and cover indexes at the
+get_vegan::diversity_info calculates various biovegan::diversity and cover indexes at the
 plot or subplot scale at each timestep for each plot. Outputs a data frame
 with number of species, percent cover, relative percent cover, and shannon
 diveristy, for natives, exotics and all species. Also calculates all of these
