@@ -16,7 +16,7 @@ First, download some data using the `download_plant_div` function. It defaults t
 
 `sites_adam_worked_at_back_in_the_day <- download_plant_div(sites = c("SRER", "JORN")`
 
-The output is a list of four things. The first two are of most interest. The first list item is the abundances observed in the 1m<sup>2</sup> subplots. The second list item is the occurrences observed for the 10m^2 and 100m^2 subplots.
+The output is a list of four things. The first two are of most interest. The first list item is the abundances observed in the 1m<sup>2</sup> subplots. The second list item is the occurrences observed for the 10m<sup>2</sup> and 100m<sup>2</sup> subplots.
 
 ### get_longform_cover
 
@@ -24,7 +24,7 @@ This is mainly a helper function for `vegify` and `get_diversity_info`. But if a
 
 ### vegify
 
-This function converts the diversity object downloaded from NEON into a matrix of either abundances (percent cover from 0-100) or occurrences (0 or 1), at the scale of your choosing (1m^2, 10m^2, 100m^2, or 400m^2, which is a whole plot).
+This function converts the diversity object downloaded from NEON into a matrix of either abundances (percent cover from 0-100) or occurrences (0 or 1), at the scale of your choosing (1m<sup>2</sup>, 10m<sup>2</sup>, 100m<sup>2</sup>, or 400m<sup>2</sup>, which is a whole plot).
 
 `species_occurrence_matrix <- vegify(sites_adam_worked_at_back_in_the_day, binary=TRUE)`
 
