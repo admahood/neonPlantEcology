@@ -16,7 +16,7 @@ First, download some data using the `download_plant_div` function. It defaults t
 
 `sites_adam_worked_at_back_in_the_day <- download_plant_div(sites = c("SRER", "JORN")`
 
-The output is a list of four things. The first two are of most interest. The first list item is the abundances observed in the 1m^2 subplots. The second list item is the occurrences observed for the 10m^2 and 100m^2 subplots.
+The output is a list of four things. The first two are of most interest. The first list item is the abundances observed in the 1m<sup>2</sup> subplots. The second list item is the occurrences observed for the 10m^2 and 100m^2 subplots.
 
 ### get_longform_cover
 
