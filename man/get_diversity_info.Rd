@@ -41,7 +41,7 @@ diveristy, for natives, exotics and all species. Also calculates all of these
 metrics for the families and/or species of your choice.
 }
 \examples{
-x <- neondiversity::download_plant_div("SRER")
+x <- download_plant_div("SRER")
 plot_level <- get_diversity_info(neon_div_object = x, scale = "plot")
 sp_level_1 <- get_diversity_info(x, "1m")
 sp_level_10 <- get_diversity_info(x, "10m")

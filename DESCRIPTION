@@ -1,12 +1,12 @@
 Package: neondiversity
 Type: Package
-Title: What the Package Does (Title Case)
+Title: A Package to Organize NEON Dlant Diversity Data
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Adam L. Mahood
+Maintainer: Adam Mahood <admahood@gmail.com>
+Description: This package contains functions for downloading and organizing
+    plant diversity data from NEON (www.neonscience.org)
+License: MIT
 Encoding: UTF-8
 LazyData: true
 Imports: neonUtilities,
