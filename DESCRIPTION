@@ -1,7 +1,7 @@
 Package: neondiversity
 Type: Package
 Title: A Package to Organize NEON Dlant Diversity Data
-Version: 0.1.0
+Version: 1.1
 Author: Adam L. Mahood
 Maintainer: Adam Mahood <admahood@gmail.com>
 Description: This package contains functions for downloading and organizing
