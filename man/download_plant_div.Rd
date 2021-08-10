@@ -2,7 +2,7 @@
 % Please edit documentation in R/diversity_data_prep.R
 \name{download_plant_div}
 \alias{download_plant_div}
-\title{Plant vegan::diversity data downloader}
+\title{Plant diversity data downloader}
 \usage{
 download_plant_div(sites = "SRER")
 }
@@ -10,7 +10,7 @@ download_plant_div(sites = "SRER")
 \item{sites}{a vector of NEON site abbreviations. Defaults to "SRER"}
 }
 \description{
-A function to download plant vegan::diversity data from the NEON API.
+A function to download plant diversity data from the NEON API.
 }
 \details{
 Data comes in two separate components:
@@ -18,8 +18,8 @@ Data comes in two separate components:
 10 and 100m2 subplots with presence only (second item of the list)
 }
 \examples{
-vegan::diversity_object <- download_plant_div(sites = "SRER")
+diversity_object <- download_plant_div(sites = "SRER")
 }
+\keyword{diversity}
 \keyword{download}
 \keyword{neon}
-\keyword{vegan::diversity}

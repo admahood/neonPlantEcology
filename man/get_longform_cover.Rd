@@ -2,7 +2,7 @@
 % Please edit documentation in R/diversity_data_prep.R
 \name{get_longform_cover}
 \alias{get_longform_cover}
-\title{Convert raw NEON vegan::diversity object to longform plant cover data frame}
+\title{Convert raw NEON diversity object to longform plant cover data frame}
 \usage{
 get_longform_cover(
   neon_div_object,
@@ -12,8 +12,8 @@ get_longform_cover(
 )
 }
 \arguments{
-\item{neon_div_object}{the raw vegan::diversity data downloaded using
-neonvegan::diversity::download_plant_div() or #' the function
+\item{neon_div_object}{the raw diversity data downloaded using
+neondiversity::download_plant_div() or #' the function
 neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{trace_cover}{cover value for subplots where only occupancy was recorded}
@@ -26,7 +26,7 @@ function? Defaults to false. This requires manual investigation and editing
 of the unk_fixer function.}
 }
 \description{
-The vegan::diversity data from NEON comes as a list containing 2 data frames of data
+The diversity data from NEON comes as a list containing 2 data frames of data
 that need to be combined, among other things. Here, we take those two data
 frames and combine them into a longform data frame that can then be further
 modified for analysis. Most of the unneccessary information from the raw data

@@ -2,7 +2,7 @@
 % Please edit documentation in R/diversity_data_prep.R
 \name{get_diversity_info}
 \alias{get_diversity_info}
-\title{Get plant biovegan::diversity information for NEON plots}
+\title{Get plant biodiversity information for NEON plots}
 \usage{
 get_diversity_info(
   neon_div_object,
@@ -15,7 +15,7 @@ get_diversity_info(
 }
 \arguments{
 \item{neon_div_object}{the raw vegan::diversity data downloaded using
-neonvegan::diversity::download_plant_div() or #' the function
+neondiversity::download_plant_div() or #' the function
 neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{scale}{what level of aggregation? This can be "1m", "10m", "100m", or "plot",
@@ -34,17 +34,13 @@ This can be a concatenated vector if the user want more than one family.}
 This can be a concatenated vector if the user want more than one species.}
 }
 \description{
-get_vegan::diversity_info calculates various biovegan::diversity and cover indexes at the
+get_diversity_info calculates various biodiversity and cover indexes at the
 plot or subplot scale at each timestep for each plot. Outputs a data frame
 with number of species, percent cover, relative percent cover, and shannon
-diveristy, for natives, exotics and all species. Also calculates all of these
+diversity, for natives, exotics and all species. Also calculates all of these
 metrics for the families and/or species of your choice.
 }
 \examples{
 x <- download_plant_div("SRER")
-plot_level <- get_diversity_info(neon_div_object = x, scale = "plot")
-sp_level_1 <- get_diversity_info(x, "1m")
-sp_level_10 <- get_diversity_info(x, "10m")
-sp_level_100 <- get_diversity_info(x, "100m")
-all_scales <- rbind(plot_level, sp_level_1, sp_level_10, sp_level_100)
+plot_level <- neondiversity::get_diversity_info(neon_div_object = x, scale = "plot")
 }
