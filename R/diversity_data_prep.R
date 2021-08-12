@@ -26,6 +26,63 @@ download_plant_div <- function(sites = "SRER"){
 ###############################################
 # source("R/unk_investigation.R")
 
+############################################################
+# name_cleaner tries to fix as many typos, etc as possible #
+############################################################
+
+#' Clean scientific names
+#'
+#' This function does some straight forward grep-ing to aggregate to clean up
+#' some of the latin names
+#'
+#' @param lf_cover the longform cover table created by using
+#' neondiveRsity::get_longform_cover().
+name_cleaner <- function(lf_cover){
+  all_sp=sort(unique(lf_cover$scientificName))
+
+  species_names=tolower(all_sp)
+
+
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\(l.\\).+$",replacement = "\\1")
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+-\\w+) \\(l.\\).+$",replacement = "\\1")
+
+  species_names=gsub(x = species_names,pattern = "^(\\w+ \\w+) \\(.+\\).*$",replacement = "\\1")
+
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+-\\w+) l.$",replacement = "\\1")
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) l\\..*$",replacement = "\\1")
+
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+ ssp.*",replacement = "\\1")
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+ var.*",replacement = "\\1")
+
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+\\. ssp.*",replacement = "\\1")
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+\\. var.*",replacement = "\\1")
+
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+$",replacement = "\\1")
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+\\.$",replacement = "\\1")
+
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) .*",replacement = "\\1")
+  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+-\\w+) .*",replacement = "\\1")
+
+  species_names=gsub(x = species_names,pattern = "(^\\w+ ×\\w+-\\w+).*$",replacement = "\\1")
+  species_names=gsub(x = species_names,pattern = "(^\\w+ ×\\w+).*$",replacement = "\\1")
+
+
+  species_names=gsub(x = species_names,pattern = "(^\\w+ )\\w+/\\w+$",replacement = "\\1sp.")
+  species_names<-gsub(x = species_names,pattern = "^\\w+ \\w+/.+$",replacement = "unknown plant")
+
+  species_names <- str_to_sentence(species_names)
+
+  lut_sn <- all_sp
+  names(lut_sn) <- species_names
+
+  return(
+    lf_cover %>%
+      mutate(scientificName = lut_sn[scientificName])
+    )
+
+
+}
+
 #######################################################################
 # get_longform_cover creates a long dataframe for cover from the neon #
 # diversity object (used in all of the following functions)           #
@@ -348,6 +405,7 @@ get_diversity_info <- function(neon_div_object,
                                scale = "plot",
                                trace_cover = 0.5,
                                fix_unks = FALSE,
+                               name_cleaner = FALSE,
                                families = NA,
                                spp = NA) {
   require(tidyverse)
@@ -357,7 +415,7 @@ get_diversity_info <- function(neon_div_object,
   full_on_cover <- get_longform_cover(neon_div_object,
                                       scale = scale,
                                       fix_unks = fix_unks)
-
+  if(name_cleaner) full_on_cover <- name_cleaner(full_on_cover)
   # Native vs Invasive cover ===================================================
 
   n_i <- full_on_cover %>%

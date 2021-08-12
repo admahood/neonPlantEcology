@@ -9,6 +9,7 @@ get_diversity_info(
   scale = "plot",
   trace_cover = 0.5,
   fix_unks = FALSE,
+  name_cleaner = FALSE,
   families = NA,
   spp = NA
 )
