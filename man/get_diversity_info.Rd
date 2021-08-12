@@ -9,8 +9,8 @@ get_diversity_info(
   scale = "plot",
   trace_cover = 0.5,
   fix_unks = FALSE,
-  families = "Poaceae",
-  spp = "Bromus tectorum"
+  families = NA,
+  spp = NA
 )
 }
 \arguments{

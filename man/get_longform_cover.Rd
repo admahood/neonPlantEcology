@@ -13,7 +13,7 @@ get_longform_cover(
 }
 \arguments{
 \item{neon_div_object}{the raw diversity data downloaded using
-neondiversity::download_plant_div() or #' the function
+neondiversity::download_plant_div() or the function
 neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{trace_cover}{cover value for subplots where only occupancy was recorded}
