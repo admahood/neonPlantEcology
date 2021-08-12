@@ -8,7 +8,7 @@ This package contains scripts for processing plant species cover and occurrence 
 
 ## Installation Instructions
 
-`devtools::install_github("admahood/neondiversity")`
+`devtools::install_github("admahood/neondiveRsity")`
 
 ## Use
 
