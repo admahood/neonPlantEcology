@@ -1,10 +1,3 @@
-# library(neonUtilities)
-# library(tidyverse)
-# library(ggpubr)
-# library(vegan)
-#
-# options(stringsAsFactors = FALSE)
-#
 
 #' Plant diversity data downloader
 #'
@@ -51,8 +44,8 @@ download_plant_div <- function(sites = "SRER"){
 #' neondiversity::download_plant_div() or the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
 #' @param trace_cover cover value for subplots where only occupancy was recorded
-#' @param scale what level of aggregation? This can be "1m", "10m", "100m", or "plot",
-#' which is the default.
+#' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
+#' which is the default, or "site".
 #' @param fix_unks Should the unknown codes be altered with the "unk_fixer()"
 #' function? Defaults to false. This requires manual investigation and editing
 #' of the unk_fixer function.
@@ -104,12 +97,67 @@ get_longform_cover <- function(neon_div_object,
                 family = first(family)) %>%
       dplyr::ungroup()
 
-    full_on_cover <- rbind(cover, traces) %>%
+    full_on_cover <- bind_rows(cover, traces) %>%
       dplyr::group_by(plotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
       dplyr::summarise(cover = sum(cover)) %>%
       dplyr::ungroup()%>%
       dplyr::mutate(site = str_sub(plotID, 1,4),
              subplotID = "plot")
+    if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
+
+    return(full_on_cover)
+  }
+  if(scale == "site"){
+    cover <- neon_div_object$div_1m2Data %>%
+      dplyr::mutate(endDate = as.Date(endDate)) %>%
+      dplyr::filter(divDataType == "plantSpecies") %>%
+      dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+      replace_na(list(percentCover=trace_cover)) %>%
+      dplyr::group_by(plotID, subplotID, taxonID, year) %>%
+      # dealing with the multiple bout issue by first getting the max cover
+      # per sampling effort
+      dplyr::summarise(cover = max(percentCover),
+                       nativeStatusCode = first(nativeStatusCode),
+                       scientificName = first(scientificName),
+                       family = first(family)) %>%
+      dplyr::ungroup()  %>%
+      dplyr::filter(taxonID != "") %>%
+      dplyr::group_by(plotID, taxonID, year) %>%
+      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/8,
+                       nativeStatusCode = first(nativeStatusCode),
+                       scientificName = first(scientificName),
+                       family = first(family)) %>%
+      dplyr::ungroup()
+
+    traces <- neon_div_object$div_10m2Data100m2Data %>%
+      dplyr::mutate(endDate = as.Date(endDate)) %>%
+      dplyr::filter(targetTaxaPresent == "Y") %>%
+      dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+      dplyr::group_by(plotID, subplotID, taxonID, year) %>%
+      dplyr::summarise(cover = trace_cover,
+                       scientificName = first(scientificName),
+                       nativeStatusCode = first(nativeStatusCode),
+                       family = first(family)) %>%
+      dplyr::ungroup() %>%
+      dplyr::filter(taxonID != "") %>%
+      dplyr::group_by(plotID, taxonID, year) %>%
+      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/12,
+                       nativeStatusCode = first(nativeStatusCode),
+                       scientificName = first(scientificName),
+                       family = first(family)) %>%
+      dplyr::ungroup()
+
+    n_plots <- length(unique(cover$plotID))
+
+    full_on_cover <- bind_rows(cover, traces) %>%
+      dplyr::group_by(plotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
+      dplyr::summarise(cover = sum(cover)) %>%
+      dplyr::ungroup()%>%
+      dplyr::mutate(site = str_sub(plotID, 1,4)) %>%
+      group_by(site, taxonID, year, nativeStatusCode, scientificName, family) %>%
+      summarise(cover = sum(cover)/n_plots) %>%
+      mutate(subplotID = "site",
+             plotID = "site")
     if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
 
     return(full_on_cover)
@@ -279,8 +327,8 @@ vegify <- function(neon_div_object,
 #' @param neon_div_object the raw vegan::diversity data downloaded using
 #' neondiversity::download_plant_div() or #' the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
-#' @param scale what level of aggregation? This can be "1m", "10m", "100m", or "plot",
-#' which is the default.
+#' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
+#' which is the default, or "site".
 #' @param trace_cover cover value for subplots where only occupancy was recorded
 #' @param fix_unks Should the unknown codes be altered with the "unk_fixer()"
 #' function? Defaults to false. This requires manual investigation and editing
@@ -292,6 +340,9 @@ vegify <- function(neon_div_object,
 #' @examples
 #' x <- download_plant_div("SRER")
 #' plot_level <- neondiversity::get_diversity_info(neon_div_object = x, scale = "plot")
+#' hot_deserts <- c("JORN", "SRER) %>%
+#'   download_plant_div() %>%
+#'   get_diversity_info(scale = "site")
 #' @export
 get_diversity_info <- function(neon_div_object,
                                scale = "plot",
@@ -377,7 +428,7 @@ get_diversity_info <- function(neon_div_object,
       dplyr::summarise(nspp = length(unique(scientificName))) %>%
       dplyr::ungroup() %>%
       dplyr::filter(family %in% families) %>%
-      tidyr::pivot_wider(names_from = c(family,nativeStatusCode),
+      tidyr::pivot_wider(names_from = c(family, nativeStatusCode),
                   names_prefix = "nspp_",
                   values_from = (nspp),
                   values_fill = list(nspp = 0))
@@ -585,8 +636,8 @@ get_diversity_info <- function(neon_div_object,
     dplyr::left_join(div_total, by = c("plotID", "subplotID", "year")) %>%
     dplyr::mutate(site = str_sub(plotID, 1,4),
                   scale = scale,
-                  invaded = if_else(cover_exotic > 0, "invaded", "not_invaded"))%>%
-    dplyr::mutate(scale = factor(scale, levels = c("1m","10m","100m", "plot")))
+                  invaded = if_else(cover_exotic > 0, "invaded", "not_invaded"))#%>%
+    #dplyr::mutate(scale = factor(scale, levels = c("1m","10m","100m", "plot", "site")))
 
   if(!is.na(families)){
     final_table <- final_table %>%
@@ -603,7 +654,12 @@ get_diversity_info <- function(neon_div_object,
     dplyr::left_join(c_sp, by = c("plotID", "subplotID", "year"))}
 
   # seems crazy, i know... but those NAs should all definitely be zero
-  final_table[is.na(final_table)] <- 0
+  final_table <- final_table %>%
+    mutate_all(funs(replace(., is.na(.), 0)))
+
+
+
+
 
   return(final_table)
 }

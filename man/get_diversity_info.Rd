@@ -18,8 +18,8 @@ get_diversity_info(
 neondiversity::download_plant_div() or #' the function
 neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
-\item{scale}{what level of aggregation? This can be "1m", "10m", "100m", or "plot",
-which is the default.}
+\item{scale}{what level of aggregation? This can be "1m", "10m", "100m", "plot",
+which is the default, or "site".}
 
 \item{trace_cover}{cover value for subplots where only occupancy was recorded}
 
@@ -39,8 +39,4 @@ plot or subplot scale at each timestep for each plot. Outputs a data frame
 with number of species, percent cover, relative percent cover, and shannon
 diversity, for natives, exotics and all species. Also calculates all of these
 metrics for the families and/or species of your choice.
-}
-\examples{
-x <- download_plant_div("SRER")
-plot_level <- neondiversity::get_diversity_info(neon_div_object = x, scale = "plot")
 }

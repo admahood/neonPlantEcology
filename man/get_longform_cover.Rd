@@ -18,8 +18,8 @@ neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{trace_cover}{cover value for subplots where only occupancy was recorded}
 
-\item{scale}{what level of aggregation? This can be "1m", "10m", "100m", or "plot",
-which is the default.}
+\item{scale}{what level of aggregation? This can be "1m", "10m", "100m", "plot",
+which is the default, or "site".}
 
 \item{fix_unks}{Should the unknown codes be altered with the "unk_fixer()"
 function? Defaults to false. This requires manual investigation and editing
