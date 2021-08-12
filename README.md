@@ -30,7 +30,6 @@ This function converts the diversity object downloaded from NEON into a matrix o
 
 `get_diversity_info` calculates various biodiversity and cover indexes at the plot or subplot scale for each year for each plot. Outputs a data frame with number of species, percent cover, relative percent cover, and shannon diveristy, for natives, exotics and all species. Also calculates all of these metrics for the families and/or species of your choice.
 
-
 ### get_longform_cover
 
 This is really the meat of the package. It is used as a helper function for `vegify` and `get_diversity_info`. In many cases the end user will not need to deal with it, but if all you want is a longform dataframe of the percent cover of each species in each plot or subplot, this is the function for you. 
@@ -46,5 +45,9 @@ These decisions are given as arguments to the function call. The function aggreg
 ### unk_fixer
 
 There are a many instances where plants are classified as unknown, but still have a certain level of known-ness. For example, an unknown Opuntia sp. may have the genus and family recorded, but still be listed as unknown for the nativeStatusCode. It is possible to look at local flora and determine that while the exact species is unknown, the plant is very likely to be native or non-native. For example, a site may have 5 species of Opuntia that are all native. In this case, if the user cares about the native status, we provide a script that can be edited manually (unk_investigation.R) to address this concern. I did a very basic first try for the sites we were interested in examining while I was writing these functions. All of the above functions have an arguement, `fix_unks`, that defaults to `FALSE`. If it is set to `TRUE`, the `unk_fixer` function is called from the unk_investigation.R script and native status codes are changed according to the script. This is still very much in the beta stage.
+
+Another thought on fixing unknown species is using a model that incorporates that uncertainty developed recently by Anna I Spiers (2021).
+
+Spiers, Anna I. and Royle, J. Andrew and Torrens, Christa L. and Joseph, Maxwell B. 2021. Estimating occupancy dynamics and encounter rates with species misclassification: a semi-supervised individual-level approach. Biorxiv, http://biorxiv.org/lookup/doi/10.1101/2021.03.17.433917
 
 Barnett, D. T., Adler, P. B., Chemel, B. R., Duffy, P. A., Enquist, B. J., Grace, J. B., … Vellend, M. (2019). The plant diversity sampling design for The National Ecological Observatory Network. Ecosphere, 10(2), e02603. https://doi.org/10.1002/ecs2.2603
