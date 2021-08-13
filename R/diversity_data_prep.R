@@ -416,6 +416,9 @@ get_diversity_info <- function(neon_div_object,
                                       scale = scale,
                                       fix_unks = fix_unks)
   if(name_cleaner) full_on_cover <- name_cleaner(full_on_cover)
+
+  template <- full_on_cover %>%
+    dplyr::select(site, plotID, subplotID, year)
   # Native vs Invasive cover ===================================================
 
   n_i <- full_on_cover %>%
@@ -599,18 +602,15 @@ get_diversity_info <- function(neon_div_object,
   }
   # vegan::diversity indexes splitting between native status ==========================
   # exotic ===============
-  vegan_friendly_div_ex<- full_on_cover %>%
+  vegan_friendly_div_ex <- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("I")) %>%
     dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
     dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(taxonID = as.character(taxonID),
-           plotID = as.character(plotID)) %>%
     dplyr::group_by(site, plotID, subplotID, year) %>%
     tidyr::spread(taxonID, cover, fill=0) %>%
     dplyr::ungroup()
 
-  # note to self - hard code! gotta fix it
   nspp_ex <- vegan_friendly_div_ex %>%
     dplyr::select(site, plotID, subplotID,year) %>%
     mutate(shannon_exotic = vegan::diversity(vegan_friendly_div_ex %>%
@@ -693,7 +693,9 @@ get_diversity_info <- function(neon_div_object,
                                              dplyr::select(-site, -plotID, -subplotID, -year)))
 
   # joining and writing out ------------------------------------------------------
-  final_table <- dplyr::left_join(nspp_ex,nspp_n, by = c("site", "plotID", "subplotID", "year")) %>%
+  final_table <- template %>%
+    dplyr::left_join(nspp_ex, by = c("site", "plotID", "subplotID", "year")) %>%
+    dplyr::left_join(nspp_n, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(nspp_un, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(n_i_cover, by = c("site", "plotID", "subplotID","year")) %>%
     dplyr::left_join(n_i_rel_cover, by = c("site", "plotID", "subplotID", "year")) %>%
