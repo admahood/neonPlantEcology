@@ -211,10 +211,11 @@ get_longform_cover <- function(neon_div_object,
       dplyr::summarise(cover = sum(cover)) %>%
       dplyr::ungroup()%>%
       dplyr::mutate(site = str_sub(plotID, 1,4)) %>%
-      group_by(site, taxonID, year, nativeStatusCode, scientificName, family) %>%
-      summarise(cover = sum(cover)/n_plots) %>%
-      mutate(subplotID = "site",
-             plotID = "site")
+      dplyr::group_by(site, taxonID, year, nativeStatusCode, scientificName, family) %>%
+      dplyr::summarise(cover = sum(cover)/n_plots) %>%
+      dplyr::mutate(subplotID = "site",
+             plotID = "site") %>%
+      dplyr::ungroup()
     if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
 
     return(full_on_cover)
