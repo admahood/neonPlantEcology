@@ -37,7 +37,7 @@ This can be a concatenated vector if the user want more than one species.}
 \description{
 get_diversity_info calculates various biodiversity and cover indexes at the
 plot or subplot scale at each timestep for each plot. Outputs a data frame
-with number of species, percent cover, relative percent cover, and shannon
+with number of species, percent cover, relative percent cover (relative to the cover of the other plants), and shannon
 diversity, for natives, exotics and all species. Also calculates all of these
 metrics for the families and/or species of your choice.
 }

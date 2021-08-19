@@ -378,7 +378,7 @@ vegify <- function(neon_div_object,
 #'
 #' get_diversity_info calculates various biodiversity and cover indexes at the
 #' plot or subplot scale at each timestep for each plot. Outputs a data frame
-#' with number of species, percent cover, relative percent cover, and shannon
+#' with number of species, percent cover, relative percent cover (relative to the cover of the other plants), and shannon
 #' diversity, for natives, exotics and all species. Also calculates all of these
 #' metrics for the families and/or species of your choice.
 #'
@@ -721,7 +721,8 @@ get_diversity_info <- function(neon_div_object,
 
   # seems crazy, i know... but those NAs should all definitely be zero
   final_table <- final_table %>%
-    mutate_all(funs(replace(., is.na(.), 0)))
+    mutate_all(funs(replace(., is.na(.), 0))) %>%
+    unique() # temporary fix, for some reason it's returning repeats of each row - there's mutate somewhere where there needs to be a summarise maybe
 
 
 
