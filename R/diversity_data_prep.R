@@ -427,8 +427,8 @@ get_diversity_info <- function(neon_div_object,
 
   template <- full_on_cover %>%
     dplyr::select(site, plotID, subplotID, year)
-  # Native vs Invasive cover ===================================================
 
+  # Betadiversity ===================
   if(betadiversity == TRUE & scale == "plot"){
 
      ten_m <- get_longform_cover(neon_div_object,
@@ -507,6 +507,8 @@ get_diversity_info <- function(neon_div_object,
     }
 
   }
+
+  # Native vs Invasive cover ===================================================
 
   n_i <- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("I", "N", "UNK")) %>%
@@ -818,7 +820,10 @@ get_diversity_info <- function(neon_div_object,
     dplyr::mutate(scale = scale,
                   invaded = if_else(cover_exotic > 0, "invaded", "not_invaded"))#%>%
     #dplyr::mutate(scale = factor(scale, levels = c("1m","10m","100m", "plot", "site")))
-
+  if(exists(bd)){
+    final_table <- final_table %>%
+      left_join(bd, by = c("site", "plotID", "subplotID", "year"))
+  }
   if(!is.na(families)){
     final_table <- final_table %>%
     dplyr::left_join(rcf, by = c("site", "plotID", "subplotID", "year")) %>%
