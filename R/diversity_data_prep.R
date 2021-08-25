@@ -20,12 +20,6 @@ download_plant_div <- function(sites = "SRER"){
   return(x)
 }
 
-
-###############################################
-# function to fix some of the unknown species #
-###############################################
-# source("R/unk_investigation.R")
-
 ############################################################
 # name_cleaner tries to fix as many typos, etc as possible #
 ############################################################
@@ -476,8 +470,9 @@ get_diversity_info <- function(neon_div_object,
   if(betadiversity == TRUE & scale == "plot"){
 
      ten_m <- get_longform_cover(neon_div_object,
-                                        scale = "10m",
-                                        fix_unks = fix_unks) %>%
+                                 scale = "10m",
+                                 dissolve_years = dissolve_years,
+                                 fix_unks = fix_unks) %>%
       dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
       dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
@@ -517,6 +512,7 @@ get_diversity_info <- function(neon_div_object,
 
     plot_scale <- get_longform_cover(neon_div_object,
                                 scale = "plot",
+                                dissolve_years = dissolve_years,
                                 fix_unks = fix_unks) %>%
       dplyr::group_by(site, plotID,taxonID, year) %>%
       dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
