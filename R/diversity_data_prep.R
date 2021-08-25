@@ -619,6 +619,8 @@ get_diversity_info <- function(neon_div_object,
                                                       -plotID,
                                                       -subplotID,
                                                       -year)),
+           evenness_exotic = shannon_exotic/vegan::specnumber(vegan_friendly_div_ex%>%
+                                                                  dplyr::select(-site, -plotID, -subplotID, -year)),
            nspp_exotic = vegan::specnumber(vegan_friendly_div_ex %>%
                                       dplyr::select(-site,
                                                     -plotID,
@@ -644,11 +646,14 @@ get_diversity_info <- function(neon_div_object,
                                                              -plotID,
                                                              -subplotID,
                                                              -year)),
+           evenness_native = shannon_native/vegan::specnumber(vegan_friendly_div_n%>%
+                                                                  dplyr::select(-site, -plotID, -subplotID, -year)),
            nspp_native = vegan::specnumber(vegan_friendly_div_n %>%
                                              dplyr::select(-site,
                                                            -plotID,
                                                            -subplotID,
                                                            -year)))
+
 
   # unknown ========================
   vegan_friendly_div_un<- full_on_cover %>%
@@ -669,6 +674,8 @@ get_diversity_info <- function(neon_div_object,
                                                              -plotID,
                                                              -subplotID,
                                                              -year)),
+           evenness_unknown = shannon_unknown/vegan::specnumber(vegan_friendly_div_un%>%
+                                                              dplyr::select(-site, -plotID, -subplotID, -year)),
            nspp_unknown = vegan::specnumber(vegan_friendly_div_un %>%
                                              dplyr::select(-site,
                                                            -plotID,
@@ -690,8 +697,28 @@ get_diversity_info <- function(neon_div_object,
   div_total <- dplyr::select(vegan_friendly_div_total, site, plotID, subplotID,year) %>%
     mutate(shannon_total = vegan::diversity(vegan_friendly_div_total%>%
                                                dplyr::select(-site, -plotID, -subplotID, -year)),
+           evenness_total = shannon_total/vegan::specnumber(vegan_friendly_div_total%>%
+                                                                dplyr::select(-site, -plotID, -subplotID, -year)),
            nspp_total = vegan::specnumber(vegan_friendly_div_total%>%
                                              dplyr::select(-site, -plotID, -subplotID, -year)))
+
+  # family diversity ===========================================================
+  vegan_friendly_div_total_f <- full_on_cover %>%
+    dplyr::filter(!is.na(family)) %>%
+    dplyr::group_by(site, plotID, subplotID, family, year) %>%
+    dplyr::summarise(cover = sum(cover)) %>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(site, plotID, subplotID,year) %>%
+    tidyr::spread(family, cover, fill=0) %>%
+    dplyr::ungroup()
+
+  div_total_f <- dplyr::select(vegan_friendly_div_total_f, site, plotID, subplotID,year) %>%
+    mutate(shannon_family = vegan::diversity(vegan_friendly_div_total_f%>%
+                                              dplyr::select(-site, -plotID, -subplotID, -year)),
+           evenness_family = shannon_family/vegan::specnumber(vegan_friendly_div_total_f%>%
+                                               dplyr::select(-site, -plotID, -subplotID, -year)),
+           nfamilies = vegan::specnumber(vegan_friendly_div_total_f%>%
+                                            dplyr::select(-site, -plotID, -subplotID, -year)))
 
   # joining and writing out ------------------------------------------------------
   final_table <- template %>%
@@ -701,6 +728,7 @@ get_diversity_info <- function(neon_div_object,
     dplyr::left_join(n_i_cover, by = c("site", "plotID", "subplotID","year")) %>%
     dplyr::left_join(n_i_rel_cover, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(div_total, by = c("site", "plotID", "subplotID", "year")) %>%
+    dplyr::left_join(div_total_f, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::mutate(scale = scale,
                   invaded = if_else(cover_exotic > 0, "invaded", "not_invaded"))#%>%
     #dplyr::mutate(scale = factor(scale, levels = c("1m","10m","100m", "plot", "site")))
