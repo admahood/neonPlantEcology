@@ -820,7 +820,7 @@ get_diversity_info <- function(neon_div_object,
     dplyr::mutate(scale = scale,
                   invaded = if_else(cover_exotic > 0, "invaded", "not_invaded"))#%>%
     #dplyr::mutate(scale = factor(scale, levels = c("1m","10m","100m", "plot", "site")))
-  if(exists(bd)){
+  if(exists("bd")){
     final_table <- final_table %>%
       left_join(bd, by = c("site", "plotID", "subplotID", "year"))
   }
