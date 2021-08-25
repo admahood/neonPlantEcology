@@ -9,6 +9,7 @@ get_diversity_info(
   scale = "plot",
   trace_cover = 0.5,
   fix_unks = FALSE,
+  dissolve_years = FALSE,
   betadiversity = FALSE,
   name_cleaner = FALSE,
   families = NA,
@@ -28,6 +29,10 @@ which is the default, or "site".}
 \item{fix_unks}{Should the unknown codes be altered with the "unk_fixer()"
 function? Defaults to false. This requires manual investigation and editing
 of the unk_fixer function.}
+
+\item{dissolve_years}{by default get_diversity_info groups everything by year.
+The user may set this argument to true to have the function aggregate the years
+together and then calculate diversity and cover indexes.}
 
 \item{betadiversity}{If evaluating at the plot or site level, should beta
 diversity (turnover and nestedness) be calculated. If scale = plot, it will

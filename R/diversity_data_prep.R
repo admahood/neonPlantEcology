@@ -164,10 +164,16 @@ get_longform_cover <- function(neon_div_object,
     if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
 
     if(dissolve_years) {
+      year_range <- unique(full_on_cover$year)%>%
+        as.numeric %>%
+        range %>%
+        paste(collapse = "-")
       n_years <- length(unique(full_on_cover$year))
       full_on_cover <- full_on_cover %>%
         group_by(plotID, taxonID, nativeStatusCode, scientificName, family, site, subplotID) %>%
-        summarise(cover = sum(cover, na.rm=T)/n_years)
+        summarise(cover = sum(cover, na.rm=T)/n_years) %>%
+        ungroup() %>%
+        mutate(year = year_range)
     }
 
     return(full_on_cover)
@@ -226,10 +232,16 @@ get_longform_cover <- function(neon_div_object,
       dplyr::ungroup()
     if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
     if(dissolve_years) {
+      year_range <- unique(full_on_cover$year)%>%
+        as.numeric %>%
+        range %>%
+        paste(collapse = "-")
       n_years <- length(unique(full_on_cover$year))
       full_on_cover <- full_on_cover %>%
         group_by(plotID, taxonID, nativeStatusCode, scientificName, family, site, subplotID) %>%
-        summarise(cover = sum(cover, na.rm=T)/n_years)
+        summarise(cover = sum(cover, na.rm=T)/n_years) %>%
+        ungroup() %>%
+        mutate(year = year_range)
     }
     return(full_on_cover)
   }
@@ -330,10 +342,16 @@ get_longform_cover <- function(neon_div_object,
   if(scale == "100m") full_on_cover <- cover4
 
   if(dissolve_years) {
+    year_range <- unique(full_on_cover$year)%>%
+      as.numeric %>%
+      range %>%
+      paste(collapse = "-")
     n_years <- length(unique(full_on_cover$year))
     full_on_cover <- full_on_cover %>%
       group_by(plotID, taxonID, nativeStatusCode, scientificName, family, site, subplotID) %>%
-      summarise(cover = sum(cover, na.rm=T)/n_years)
+      summarise(cover = sum(cover, na.rm=T)/n_years) %>%
+      ungroup() %>%
+      mutate(year = year_range)
   }
 
 
@@ -412,6 +430,9 @@ vegify <- function(neon_div_object,
 #' @param fix_unks Should the unknown codes be altered with the "unk_fixer()"
 #' function? Defaults to false. This requires manual investigation and editing
 #' of the unk_fixer function.
+#' @param dissolve_years by default get_diversity_info groups everything by year.
+#' The user may set this argument to true to have the function aggregate the years
+#' together and then calculate diversity and cover indexes.
 #' @param betadiversity If evaluating at the plot or site level, should beta
 #' diversity (turnover and nestedness) be calculated. If scale = plot, it will
 #' calculate betadiversity within each plot, using the combined species
@@ -433,6 +454,7 @@ get_diversity_info <- function(neon_div_object,
                                scale = "plot",
                                trace_cover = 0.5,
                                fix_unks = FALSE,
+                               dissolve_years = FALSE,
                                betadiversity = FALSE,
                                name_cleaner = FALSE,
                                families = NA,
@@ -443,6 +465,7 @@ get_diversity_info <- function(neon_div_object,
 
   full_on_cover <- get_longform_cover(neon_div_object,
                                       scale = scale,
+                                      dissolve_years = dissolve_years,
                                       fix_unks = fix_unks)
   if(name_cleaner) full_on_cover <- name_cleaner(full_on_cover)
 
@@ -849,14 +872,14 @@ get_diversity_info <- function(neon_div_object,
     tidyr::spread(taxonID, cover, fill=0) %>%
     dplyr::ungroup()
 
-  nspp_un <- vegan_friendly_div_nex %>%
+  nspp_nex <- vegan_friendly_div_nex %>%
     dplyr::select(site, plotID, subplotID,year) %>%
     mutate(shannon_notexotic = vegan::diversity(vegan_friendly_div_nex %>%
                                                 dplyr::select(-site,
                                                               -plotID,
                                                               -subplotID,
                                                               -year)),
-           evenness_notexotic = shannon_unknown/vegan::specnumber(vegan_friendly_div_nex%>%
+           evenness_notexotic = shannon_notexotic/vegan::specnumber(vegan_friendly_div_nex%>%
                                                                   dplyr::select(-site, -plotID, -subplotID, -year)),
            nspp_notexotic = vegan::specnumber(vegan_friendly_div_nex %>%
                                               dplyr::select(-site,
