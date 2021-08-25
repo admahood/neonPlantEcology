@@ -391,6 +391,12 @@ vegify <- function(neon_div_object,
 #' @param fix_unks Should the unknown codes be altered with the "unk_fixer()"
 #' function? Defaults to false. This requires manual investigation and editing
 #' of the unk_fixer function.
+#' @param betadiversity If evaluating at the plot or site level, should beta
+#' diversity (turnover and nestedness) be calculated. If scale = plot, it will
+#' calculate betadiversity within each plot, using the combined species
+#' presences within the 1 and 10 m subplots, and so it's calcuated from 8 subplots
+#' before 2020, 6 after. if scale = site, it calculates the betadiversity between
+#' plots.
 #' @param families Which specific families should the metrics be calculated for?
 #' This can be a concatenated vector if the user want more than one family.
 #' @param species Which specific species should the metrics be calculated for?
@@ -406,6 +412,7 @@ get_diversity_info <- function(neon_div_object,
                                scale = "plot",
                                trace_cover = 0.5,
                                fix_unks = FALSE,
+                               betadiversity = FALSE,
                                name_cleaner = FALSE,
                                families = NA,
                                spp = NA) {
@@ -421,6 +428,85 @@ get_diversity_info <- function(neon_div_object,
   template <- full_on_cover %>%
     dplyr::select(site, plotID, subplotID, year)
   # Native vs Invasive cover ===================================================
+
+  if(betadiversity == TRUE & scale == "plot"){
+
+     ten_m <- get_longform_cover(neon_div_object,
+                                        scale = "10m",
+                                        fix_unks = fix_unks) %>%
+      dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
+      dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
+      dplyr::ungroup() %>%
+      dplyr::group_by(site, plotID, subplotID, year) %>%
+      tidyr::spread(taxonID, cover, fill=0) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(-subplotID)
+
+     bd<- data.frame(turnover = NA, nestedness = NA, year = NA, plotID = NA, site = NA, subplotID = NA)
+
+     counter <- 1
+     for(i in unique(ten_m$year)){
+       for(j in unique(ten_m$plotID)){
+
+         if(nrow(ten_m %>%
+                 dplyr::filter(year == i, plotID == j))>0){
+          out <- ten_m %>%
+           dplyr::filter(year == i, plotID == j) %>%
+           dplyr::select(-year, -site, -plotID) %>%
+           nestedbetajac()
+
+          bd[counter, 1] <- out[1] %>% unname
+          bd[counter, 2] <- out[2] %>% unname
+          bd[counter, 3] <- i
+          bd[counter, 4] <- j
+          bd[counter, 5] <- str_sub(j, 1,4)
+          bd[counter, 6] <- "plot"
+
+          counter <- counter+1}
+       }
+     }
+
+
+  }
+
+  if(betadiversity == TRUE & scale == "site"){
+
+    plot_scale <- get_longform_cover(neon_div_object,
+                                scale = "plot",
+                                fix_unks = fix_unks) %>%
+      dplyr::group_by(site, plotID,taxonID, year) %>%
+      dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
+      dplyr::ungroup() %>%
+      dplyr::group_by(site, plotID, year) %>%
+      tidyr::spread(taxonID, cover, fill=0) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(-plotID)
+
+    bd<- data.frame(turnover = NA, nestedness = NA, year = NA, site = NA, plotID = NA, subplotID = NA)
+
+    counter <- 1
+    for(i in unique(plot_scale$year)){
+      for(j in unique(plot_scale$site)){
+
+        if(nrow(plot_scale %>%
+                dplyr::filter(year == i, site == j))>0){
+          out <- plot_scale %>%
+            dplyr::filter(year == i, site == j) %>%
+            dplyr::select(-year, -site) %>%
+            nestedbetajac()
+
+          bd[counter, 1] <- out[1] %>% unname
+          bd[counter, 2] <- out[2] %>% unname
+          bd[counter, 3] <- i
+          bd[counter, 4] <- j
+          bd[counter, 5] <- "site"
+          bd[counter, 6] <- "site"
+
+          counter <- counter+1}
+      }
+    }
+
+  }
 
   n_i <- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("I", "N", "UNK")) %>%

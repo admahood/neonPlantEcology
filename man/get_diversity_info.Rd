@@ -9,6 +9,7 @@ get_diversity_info(
   scale = "plot",
   trace_cover = 0.5,
   fix_unks = FALSE,
+  betadiversity = FALSE,
   name_cleaner = FALSE,
   families = NA,
   spp = NA
@@ -27,6 +28,13 @@ which is the default, or "site".}
 \item{fix_unks}{Should the unknown codes be altered with the "unk_fixer()"
 function? Defaults to false. This requires manual investigation and editing
 of the unk_fixer function.}
+
+\item{betadiversity}{If evaluating at the plot or site level, should beta
+diversity (turnover and nestedness) be calculated. If scale = plot, it will
+calculate betadiversity within each plot, using the combined species
+presences within the 1 and 10 m subplots, and so it's calcuated from 8 subplots
+before 2020, 6 after. if scale = site, it calculates the betadiversity between
+plots.}
 
 \item{families}{Which specific families should the metrics be calculated for?
 This can be a concatenated vector if the user want more than one family.}
