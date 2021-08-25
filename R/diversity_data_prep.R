@@ -566,24 +566,30 @@ get_diversity_info <- function(neon_div_object,
     dplyr::mutate(rel_cover = cover/total_cover) %>%
     dplyr::ungroup()
 
+  lut_nsc <-c("cover_native", "cover_exotic", "cover_unknown")
+  names(lut_nsc) <-  c("N", "I", "UNK")
+
   n_i_cover <- n_i %>%
     dplyr::select(site, plotID, subplotID,year, nativeStatusCode, cover) %>%
+    mutate(nativeStatusCode = lut_nsc[nativeStatusCode]) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                 values_from = cover,
-                values_fill = list(cover = 0)) %>%
-    dplyr::rename(cover_native = N,
-           cover_exotic = I,
-           cover_unk = UNK)
+                values_fill = list(cover = 0))
 
   n_i_rel_cover <- n_i %>%
     dplyr::select(site, plotID, subplotID,year, nativeStatusCode, rel_cover) %>%
+    mutate(nativeStatusCode = lut_nsc[nativeStatusCode] %>% str_c("rel_",.)) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                 values_from = rel_cover,
                 values_fill = list(rel_cover = 0))%>%
-    dplyr::rename(rel_cover_native = N,
-           rel_cover_exotic = I,
-           rel_cover_unk = UNK)%>%
     left_join(n_i_cover, by = c("site", "plotID", "subplotID","year"))
+
+  if(sum(names(n_i_rel_cover) %in% "cover_exotic")==0){
+    n_i_rel_cover <- n_i_rel_cover %>%
+      mutate(cover_exotic = 0,
+             rel_cover_exotic = 0)
+  }
+
   # not exotic cover ===================================================
   n_e <- full_on_cover %>%
     dplyr::mutate(nativeStatusCode = ifelse(nativeStatusCode !="I", "NE", "I")) %>%
@@ -597,24 +603,27 @@ get_diversity_info <- function(neon_div_object,
     dplyr::mutate(rel_cover = cover/total_cover) %>%
     dplyr::ungroup()
 
+  lut_ne <-c("cover_notexotic", "cover_exotic")
+  names(lut_ne) <-  c("NE", "I")
+
   n_e_cover <- n_e %>%
     dplyr::select(site, plotID, subplotID,year, nativeStatusCode, cover) %>%
+    mutate(nativeStatusCode = lut_ne[nativeStatusCode]) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                        values_from = cover,
                        values_fill = list(cover = 0)) %>%
-    dplyr::rename(cover_notexotic = NE,
-                  cover_exotic = I) %>%
-    dplyr::select(-cover_exotic)
+    dplyr::select(-contains("cover_exotic"))
 
   n_e_rel_cover <- n_e %>%
     dplyr::select(site, plotID, subplotID,year, nativeStatusCode, rel_cover) %>%
+    mutate(nativeStatusCode = lut_ne[nativeStatusCode] %>% str_c("rel_",.)) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                        values_from = rel_cover,
                        values_fill = list(rel_cover = 0))%>%
-    dplyr::rename(rel_cover_notexotic = NE,
-                  rel_cover_exotic = I) %>%
-    dplyr::select(-rel_cover_exotic) %>%
+    dplyr::select(-contains("rel_cover_exotic")) %>%
     left_join(n_e_cover, by = c("site", "plotID", "subplotID","year"))
+
+
 
   # Cover by family ============================================================
   if(!is.na(families)){
@@ -716,7 +725,7 @@ get_diversity_info <- function(neon_div_object,
   }
   # by family, divided by biogeographic origin =================================
   if(!is.na(families)){
-  exotic_grass <- full_on_cover%>%
+  family_stuff <- full_on_cover%>%
     dplyr::filter(nativeStatusCode %in% c("I", "N", "UNK")) %>%
     dplyr::group_by(site, plotID, subplotID, year) %>%
     dplyr::mutate(total_cover = sum(cover))%>%
@@ -729,7 +738,7 @@ get_diversity_info <- function(neon_div_object,
     dplyr::ungroup() %>%
     dplyr::filter(family %in% families)
 
-  rc_ig<- exotic_grass%>%
+  rc_ig<- family_stuff%>%
     dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,rel_cover) %>%
     dplyr::filter(nativeStatusCode == "I") %>%
     tidyr::pivot_wider(names_from = family,
@@ -738,7 +747,7 @@ get_diversity_info <- function(neon_div_object,
                 values_fill = list(rel_cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
 
-  rc_neg<- exotic_grass%>%
+  rc_neg<- family_stuff%>%
     dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,rel_cover) %>%
     dplyr::filter(nativeStatusCode != "I") %>%
     tidyr::pivot_wider(names_from = family,
@@ -747,7 +756,7 @@ get_diversity_info <- function(neon_div_object,
                        values_fill = list(rel_cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
 
-  rc_ng<- exotic_grass%>%
+  rc_ng<- family_stuff%>%
     dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,rel_cover) %>%
     dplyr::filter(nativeStatusCode == "N") %>%
     tidyr::pivot_wider(names_from = family,
@@ -756,7 +765,7 @@ get_diversity_info <- function(neon_div_object,
                 values_fill = list(rel_cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
 
-  c_ig<- exotic_grass%>%
+  c_ig<- family_stuff%>%
     dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,cover) %>%
     dplyr::filter(nativeStatusCode == "I") %>%
     tidyr::pivot_wider(names_from = family,
@@ -764,7 +773,7 @@ get_diversity_info <- function(neon_div_object,
                 values_from = (cover),
                 values_fill = list(cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
-  c_neg<- exotic_grass%>%
+  c_neg<- family_stuff%>%
     dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,cover) %>%
     dplyr::filter(nativeStatusCode != "I") %>%
     tidyr::pivot_wider(names_from = family,
@@ -772,7 +781,7 @@ get_diversity_info <- function(neon_div_object,
                        values_from = (cover),
                        values_fill = list(cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
-  c_ng<- exotic_grass%>%
+  c_ng<- family_stuff%>%
     dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,cover) %>%
     dplyr::filter(nativeStatusCode == "N") %>%
     tidyr::pivot_wider(names_from = family,
@@ -782,6 +791,7 @@ get_diversity_info <- function(neon_div_object,
     dplyr::select(-nativeStatusCode)
   }
   # exotic  diversity and evenness ===============
+  if(nrow(filter(full_on_cover,nativeStatusCode=="I"))>0){
   vegan_friendly_div_ex <- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("I")) %>%
     dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
@@ -804,7 +814,13 @@ get_diversity_info <- function(neon_div_object,
                                       dplyr::select(-site,
                                                     -plotID,
                                                     -subplotID,
-                                                    -year)))
+                                                    -year)))}else{
+                                                      nspp_ex<-
+                                                        template %>%
+                                                        mutate(shannon_exotic = 0,
+                                                               evenness_exotic = 0,
+                                                               nspp_exotic = 0)
+                                                    }
 
   # native diversity and evenness ===========
   vegan_friendly_div_n<- full_on_cover %>%
