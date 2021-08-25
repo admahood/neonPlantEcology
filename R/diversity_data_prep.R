@@ -538,7 +538,39 @@ get_diversity_info <- function(neon_div_object,
                 values_fill = list(rel_cover = 0))%>%
     dplyr::rename(rel_cover_native = N,
            rel_cover_exotic = I,
-           rel_cover_unk = UNK)
+           rel_cover_unk = UNK)%>%
+    left_join(n_i_cover, by = c("site", "plotID", "subplotID","year"))
+  # not exotic cover ===================================================
+  n_e <- full_on_cover %>%
+    dplyr::mutate(nativeStatusCode = ifelse(nativeStatusCode !="I", "NE", "I")) %>%
+    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::mutate(total_cover = sum(cover))%>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(site, plotID, subplotID,year, nativeStatusCode) %>%
+    dplyr::summarise(cover = sum(cover),
+                     total_cover = first(total_cover)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(rel_cover = cover/total_cover) %>%
+    dplyr::ungroup()
+
+  n_e_cover <- n_e %>%
+    dplyr::select(site, plotID, subplotID,year, nativeStatusCode, cover) %>%
+    tidyr::pivot_wider(names_from = nativeStatusCode,
+                       values_from = cover,
+                       values_fill = list(cover = 0)) %>%
+    dplyr::rename(cover_notexotic = NE,
+                  cover_exotic = I) %>%
+    dplyr::select(-cover_exotic)
+
+  n_e_rel_cover <- n_e %>%
+    dplyr::select(site, plotID, subplotID,year, nativeStatusCode, rel_cover) %>%
+    tidyr::pivot_wider(names_from = nativeStatusCode,
+                       values_from = rel_cover,
+                       values_fill = list(rel_cover = 0))%>%
+    dplyr::rename(rel_cover_notexotic = NE,
+                  rel_cover_exotic = I) %>%
+    dplyr::select(-rel_cover_exotic) %>%
+    left_join(n_e_cover, by = c("site", "plotID", "subplotID","year"))
 
   # Cover by family ============================================================
   if(!is.na(families)){
@@ -662,6 +694,15 @@ get_diversity_info <- function(neon_div_object,
                 values_fill = list(rel_cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
 
+  rc_neg<- exotic_grass%>%
+    dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,rel_cover) %>%
+    dplyr::filter(nativeStatusCode != "I") %>%
+    tidyr::pivot_wider(names_from = family,
+                       names_prefix = "rc_notexotic_",
+                       values_from = (rel_cover),
+                       values_fill = list(rel_cover = 0)) %>%
+    dplyr::select(-nativeStatusCode)
+
   rc_ng<- exotic_grass%>%
     dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,rel_cover) %>%
     dplyr::filter(nativeStatusCode == "N") %>%
@@ -679,7 +720,14 @@ get_diversity_info <- function(neon_div_object,
                 values_from = (cover),
                 values_fill = list(cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
-
+  c_neg<- exotic_grass%>%
+    dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,cover) %>%
+    dplyr::filter(nativeStatusCode != "I") %>%
+    tidyr::pivot_wider(names_from = family,
+                       names_prefix = "cover_notexotic_",
+                       values_from = (cover),
+                       values_fill = list(cover = 0)) %>%
+    dplyr::select(-nativeStatusCode)
   c_ng<- exotic_grass%>%
     dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,cover) %>%
     dplyr::filter(nativeStatusCode == "N") %>%
@@ -689,8 +737,7 @@ get_diversity_info <- function(neon_div_object,
                 values_fill = list(cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
   }
-  # vegan::diversity indexes splitting between native status ==========================
-  # exotic ===============
+  # exotic  diversity and evenness ===============
   vegan_friendly_div_ex <- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("I")) %>%
     dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
@@ -715,7 +762,7 @@ get_diversity_info <- function(neon_div_object,
                                                     -subplotID,
                                                     -year)))
 
-  # native ===========
+  # native diversity and evenness ===========
   vegan_friendly_div_n<- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("N")) %>%
     dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
@@ -743,7 +790,7 @@ get_diversity_info <- function(neon_div_object,
                                                            -year)))
 
 
-  # unknown ========================
+  # unknown diversity and evenness  ========================
   vegan_friendly_div_un<- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("UNK")) %>%
     dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
@@ -769,8 +816,34 @@ get_diversity_info <- function(neon_div_object,
                                                            -plotID,
                                                            -subplotID,
                                                            -year)))
+  # not exotic diversity and evenness  ====================
+  vegan_friendly_div_nex <- full_on_cover %>%
+    dplyr::filter(nativeStatusCode != c("I")) %>%
+    dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
+    dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(taxonID = as.character(taxonID),
+                  plotID = as.character(plotID)) %>%
+    dplyr::group_by(site, plotID, subplotID, year) %>%
+    tidyr::spread(taxonID, cover, fill=0) %>%
+    dplyr::ungroup()
 
-  # total vegan::diversity - not splitting between native status
+  nspp_un <- vegan_friendly_div_nex %>%
+    dplyr::select(site, plotID, subplotID,year) %>%
+    mutate(shannon_notexotic = vegan::diversity(vegan_friendly_div_nex %>%
+                                                dplyr::select(-site,
+                                                              -plotID,
+                                                              -subplotID,
+                                                              -year)),
+           evenness_notexotic = shannon_unknown/vegan::specnumber(vegan_friendly_div_nex%>%
+                                                                  dplyr::select(-site, -plotID, -subplotID, -year)),
+           nspp_notexotic = vegan::specnumber(vegan_friendly_div_nex %>%
+                                              dplyr::select(-site,
+                                                            -plotID,
+                                                            -subplotID,
+                                                            -year)))
+
+  # total vegan::diversity - not splitting between native status =========
   vegan_friendly_div_total <- full_on_cover %>%
     dplyr::group_by(site, plotID, subplotID, taxonID, year) %>%
     dplyr::summarise(cover = sum(cover)) %>%
@@ -811,15 +884,15 @@ get_diversity_info <- function(neon_div_object,
   # joining and writing out ------------------------------------------------------
   final_table <- template %>%
     dplyr::left_join(nspp_ex, by = c("site", "plotID", "subplotID", "year")) %>%
+    dplyr::left_join(nspp_nex, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(nspp_n, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(nspp_un, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(n_i_cover, by = c("site", "plotID", "subplotID","year")) %>%
     dplyr::left_join(n_i_rel_cover, by = c("site", "plotID", "subplotID", "year")) %>%
+    dplyr::left_join(n_e_rel_cover, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(div_total, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(div_total_f, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::mutate(scale = scale,
-                  invaded = if_else(cover_exotic > 0, "invaded", "not_invaded"))#%>%
-    #dplyr::mutate(scale = factor(scale, levels = c("1m","10m","100m", "plot", "site")))
+                  invaded = if_else(cover_exotic > 0, "invaded", "not_invaded"))
   if(exists("bd")){
     final_table <- final_table %>%
       left_join(bd, by = c("site", "plotID", "subplotID", "year"))
@@ -832,6 +905,8 @@ get_diversity_info <- function(neon_div_object,
     dplyr::left_join(cf, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(rc_ng, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(c_ng, by = c("site", "plotID", "subplotID", "year"))%>%
+      dplyr::left_join(rc_neg, by = c("site", "plotID", "subplotID", "year")) %>%
+      dplyr::left_join(c_neg, by = c("site", "plotID", "subplotID", "year"))%>%
     dplyr::left_join(nspp_byfam, by = c("site", "plotID", "subplotID", "year"))}
   if(!is.na(spp)){
     final_table <- final_table %>%
