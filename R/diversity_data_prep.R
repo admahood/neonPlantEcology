@@ -112,6 +112,7 @@ name_cleaner <- function(lf_cover){
 get_longform_cover <- function(neon_div_object,
                                trace_cover=0.5,
                                scale = "plot",
+                               dissolve_years = FALSE,
                                fix_unks = FALSE){
   require(tidyverse)
   if(scale == "plot"){
@@ -161,6 +162,13 @@ get_longform_cover <- function(neon_div_object,
       dplyr::mutate(site = str_sub(plotID, 1,4),
              subplotID = "plot")
     if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
+
+    if(dissolve_years) {
+      n_years <- length(unique(full_on_cover$year))
+      full_on_cover <- full_on_cover %>%
+        group_by(plotID, taxonID, nativeStatusCode, scientificName, family, site, subplotID) %>%
+        summarise(cover = sum(cover, na.rm=T)/n_years)
+    }
 
     return(full_on_cover)
   }
@@ -217,7 +225,12 @@ get_longform_cover <- function(neon_div_object,
              plotID = "site") %>%
       dplyr::ungroup()
     if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
-
+    if(dissolve_years) {
+      n_years <- length(unique(full_on_cover$year))
+      full_on_cover <- full_on_cover %>%
+        group_by(plotID, taxonID, nativeStatusCode, scientificName, family, site, subplotID) %>%
+        summarise(cover = sum(cover, na.rm=T)/n_years)
+    }
     return(full_on_cover)
   }
 
@@ -315,6 +328,14 @@ get_longform_cover <- function(neon_div_object,
   if(scale == "1m") full_on_cover <- cover8_1m2
   if(scale == "10m") full_on_cover <- cover8_1m2_10m2
   if(scale == "100m") full_on_cover <- cover4
+
+  if(dissolve_years) {
+    n_years <- length(unique(full_on_cover$year))
+    full_on_cover <- full_on_cover %>%
+      group_by(plotID, taxonID, nativeStatusCode, scientificName, family, site, subplotID) %>%
+      summarise(cover = sum(cover, na.rm=T)/n_years)
+  }
+
 
   return(full_on_cover)
 }

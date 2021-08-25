@@ -8,6 +8,7 @@ get_longform_cover(
   neon_div_object,
   trace_cover = 0.5,
   scale = "plot",
+  dissolve_years = FALSE,
   fix_unks = FALSE
 )
 }
