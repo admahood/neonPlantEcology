@@ -30,20 +30,20 @@ This function converts the diversity object downloaded from NEON into a matrix o
 
 `get_diversity_info` calculates various biodiversity and cover indexes at the plot or subplot scale for each year for each plot. Outputs a data frame with number of species, percent cover, relative percent cover, and shannon diveristy, for natives, exotics and all species. Also calculates all of these metrics for the families and/or species of your choice.
 
-| Variable | Description |
-|:---------|-------------|
-|shannon_<exotic/native/unknown/total> | Shannon-Weaver diversity of exotic/native/unknown or all species|
-|evennness_<exotic/native/unknown/total> | Pielou's evenness |
-|nspp_<exotic/native/unknown/total> | number of species|
-|cover_<exotic/native/unknown/total> | Absolute cover as measured by technicians|
-|rel_cover_<exotic/native/unknown/total> | Relative cover - the absoulte cover divided by the total cover of all species|
-|nfamilies| number of families |
-|shannon_family| Shannon-Weaver diversity, but aggregated by family instead of species|
-|evenness_family| Pielou's evenness, but aggregated by family instead of species|
-|scale | the scale of aggregation (1m, 10m, 100m, plot or site)|
-|invaded | is there at least one exotic species present?|
-|turnover | species turnover according to vegan::nestedbetajac() (Baselga 2012) |
-|nestedness | nestedness according to vegan::nestedbetajac() (Baselga 2012) |
+| Variable | Description | Additional arguments |
+|:---------|-------------|-------------|
+|shannon_<exotic/native/unknown/total> | Shannon-Weaver diversity of exotic/native/unknown or all species| Given by default |
+|evennness_<exotic/native/unknown/total> | Pielou's evenness | |
+|nspp_<exotic/native/unknown/total> | number of species||
+|cover_<exotic/native/unknown/total> | Absolute cover as measured by technicians||
+|rel_cover_<exotic/native/unknown/total> | Relative cover - the absoulte cover divided by the total cover of all species||
+|nfamilies| number of families ||
+|shannon_family| Shannon-Weaver diversity, but aggregated by family instead of species||
+|evenness_family| Pielou's evenness, but aggregated by family instead of species||
+|scale | the scale of aggregation (1m, 10m, 100m, plot or site)||
+|invaded | is there at least one exotic species present?||
+|turnover | species turnover according to vegan::nestedbetajac() (Baselga 2012) |betadiversity = TRUE, scale = c("plot", "site")|
+|nestedness | nestedness according to vegan::nestedbetajac() (Baselga 2012) |betadiversity = TRUE, scale = c("plot", "site")|
 
 ### get_longform_cover
 
