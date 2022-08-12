@@ -16,7 +16,7 @@ This package contains scripts for processing plant species cover and occurrence 
 
 First, download some data using the `download_plant_div` function. It defaults to download the diversity data for the Santa Rita Experimental Range in Domain 14 in Arizona. The `sites` arguement in this function is used to specify which site (or sites) you wish to download. A list of field sites can be found [here](https://www.neonscience.org/field-sites/field-sites-map/list).
 
-`sites_adam_worked_at_back_in_the_day <- download_plant_div(sites = c("SRER", "JORN")`
+`sites <- download_plant_div(sites = c("SRER", "JORN")`
 
 The output is a list of four things. The first two are of most interest. The first list item is the abundances observed in the 1m<sup>2</sup> subplots. The second list item is the occurrences observed for the 10m<sup>2</sup> and 100m<sup>2</sup> subplots.
 
@@ -24,7 +24,7 @@ The output is a list of four things. The first two are of most interest. The fir
 
 This function converts the diversity object downloaded from NEON into a matrix of either abundances (percent cover from 0-100) or occurrences (0 or 1), at the scale of your choosing (1m<sup>2</sup>, 10m<sup>2</sup>, 100m<sup>2</sup>, or 400m<sup>2</sup>, which is a whole plot).
 
-`species_occurrence_matrix <- vegify(sites_adam_worked_at_back_in_the_day, binary=TRUE)`
+`species_occurrence_matrix <- vegify(sites, binary=TRUE)`
 
 ### get_diversity_info
 
