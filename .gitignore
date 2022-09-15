@@ -1,3 +1,6 @@
 packrat/lib*/
 .Rproj.user
 .Rhistory
+
+figs/
+R/terrestrial_site_summary.R
