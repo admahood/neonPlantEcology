@@ -359,12 +359,12 @@ get_longform_cover <- function(neon_div_object,
 
 #' Create a species abundance or occurrence matrix
 #'
-#' vegify creates a wide matrix of species cover or binary (presence/absence)
+#' get_community_matrix creates a wide matrix of species cover or binary (presence/absence)
 #' values with the plot/subplot/year as rownames. This is useful for the vegan
 #' package, hence the name.
 #'
 #' @param neon_div_object the raw diversity data downloaded using
-#' neondiversity::download_plant_div() or the function
+#' neondiveRsity::download_plant_div() or the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m", or "plot",
 #' which is the default.
@@ -374,7 +374,7 @@ get_longform_cover <- function(neon_div_object,
 #' of the unk_fixer function.
 #' @param binary should the matrix be converted from percent cover to binary?
 #' @export
-vegify <- function(neon_div_object,
+get_community_matrix <- function(neon_div_object,
                    scale="plot",
                    trace_cover = 0.5,
                    fix_unks = FALSE,
