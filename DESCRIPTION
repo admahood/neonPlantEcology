@@ -8,11 +8,11 @@ Author: Adam L. Mahood
 Maintainer: Adam Mahood <admahood@gmail.com>
 Description: This package contains functions for downloading and organizing
     plant diversity data from NEON (www.neonscience.org)
-License: MIT
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports: neonUtilities,
          tidyverse,
          ggpubr,
          vegan
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.1
