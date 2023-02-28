@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/268667267.svg)](https://zenodo.org/badge/latestdoi/268667267)
 
-# neondive*R*sity
+# neonPlantEcology
 
 The National Ecological Observatory Network (NEON) collects long-term ecological monitoring data on myriad ecosystem components, including plant diversity. Plant diversity data is collected at yearly or sub-yearly time steps, depending on the ecology of the site, at plots that are constructed with a nested design. The spatial and temporal nature of the sampling design, and the resulting storage of the data, may not be straightforward to the average end user. Thus, I created an R package for transforming this raw data product into forms that are easy to use for ecologists. The following is a short explanation of the data transformation process.
 
@@ -8,7 +8,7 @@ This package contains scripts for processing plant species cover and occurrence 
 
 ## Installation Instructions
 
-`devtools::install_github("admahood/neondiveRsity")`
+`devtools::install_github("admahood/neonPlantEcology")`
 
 ## Use
 
@@ -20,11 +20,11 @@ First, download some data using the `download_plant_div` function. It defaults t
 
 The output is a list of four things. The first two are of most interest. The first list item is the abundances observed in the 1m<sup>2</sup> subplots. The second list item is the occurrences observed for the 10m<sup>2</sup> and 100m<sup>2</sup> subplots.
 
-### vegify
+### get_community_matrix
 
 This function converts the diversity object downloaded from NEON into a matrix of either abundances (percent cover from 0-100) or occurrences (0 or 1), at the scale of your choosing (1m<sup>2</sup>, 10m<sup>2</sup>, 100m<sup>2</sup>, or 400m<sup>2</sup>, which is a whole plot).
 
-`species_occurrence_matrix <- vegify(sites, binary=TRUE)`
+`species_occurrence_matrix <- get_community_matrix(sites, binary=TRUE)`
 
 ### get_diversity_info
 
