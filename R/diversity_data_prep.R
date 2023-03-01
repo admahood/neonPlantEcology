@@ -30,7 +30,7 @@ download_plant_div <- function(sites = "SRER"){
 #' some of the latin names
 #'
 #' @param lf_cover the longform cover table created by using
-#' neondiveRsity::get_longform_cover().
+#' neonPlantEcology::get_longform_cover().
 name_cleaner <- function(lf_cover){
   require(magrittr)
   require(dplyr)
@@ -94,7 +94,7 @@ name_cleaner <- function(lf_cover){
 #' taxonID, cover, scientificName, nativeStatusCode, family, and site.
 #'
 #' @param neon_div_object the raw diversity data downloaded using
-#' neondiversity::download_plant_div() or the function
+#' neonPlantEcology::download_plant_div() or the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
 #' @param trace_cover cover value for subplots where only occupancy was recorded
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
@@ -364,7 +364,7 @@ get_longform_cover <- function(neon_div_object,
 #' package, hence the name.
 #'
 #' @param neon_div_object the raw diversity data downloaded using
-#' neondiveRsity::download_plant_div() or the function
+#' neonPlantEcology::download_plant_div() or the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m", or "plot",
 #' which is the default.
@@ -425,7 +425,7 @@ get_community_matrix <- function(neon_div_object,
 #' metrics for the families and/or species of your choice.
 #'
 #' @param neon_div_object the raw vegan::diversity data downloaded using
-#' neondiversity::download_plant_div() or #' the function
+#' neonPlantEcology::download_plant_div() or #' the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
 #' which is the default, or "site".
@@ -448,7 +448,7 @@ get_community_matrix <- function(neon_div_object,
 #' This can be a concatenated vector if the user want more than one species.
 #' @examples
 #' x <- download_plant_div("SRER")
-#' plot_level <- neondiversity::get_diversity_info(neon_div_object = x, scale = "plot")
+#' plot_level <- neonPlantEcology::get_diversity_info(neon_div_object = x, scale = "plot")
 #' hot_deserts <- c("JORN", "SRER) %>%
 #'   download_plant_div() %>%
 #'   get_diversity_info(scale = "site")
