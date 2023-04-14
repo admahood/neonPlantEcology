@@ -1,6 +1,6 @@
-Package: neondiveRsity
+Package: neonPlantEcology
 Type: Package
-Title: A Package to Organize NEON Plant Diversity Data
+Title: A Package to Organize NEON plant diversity data for use in ecological analysis
 Version: 1.1
 Date: 2020-06-15
 DOI: 10.5281/zenodo.3908692
