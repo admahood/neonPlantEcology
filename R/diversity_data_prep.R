@@ -111,8 +111,10 @@ get_longform_cover <- function(neon_div_object,
                                scale = "plot",
                                dissolve_years = FALSE,
                                fix_unks = FALSE){
+  .datatable.aware <- TRUE
   requireNamespace("dplyr")
   requireNamespace("dtplyr")
+  requireNamespace("tidyverse")
   requireNamespace("tidyr")
   requireNamespace("stringr")
   requireNamespace("magrittr")
@@ -308,7 +310,7 @@ get_longform_cover <- function(neon_div_object,
     tibble::as_tibble()
 
   traces100s <- neon_div_object$div_10m2Data100m2Data %>%
-    # dtplyr::lazy_dt() %>%
+    dtplyr::lazy_dt() %>%
     dplyr::mutate(endDate = as.Date(endDate)) %>%
     dplyr::filter(targetTaxaPresent == "Y") %>%
     dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
