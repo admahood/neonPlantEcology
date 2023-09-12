@@ -18,7 +18,7 @@ Data comes in two separate components:
 10 and 100m2 subplots with presence only (second item of the list)
 }
 \examples{
-diversity_object <- download_plant_div(sites = "SRER")
+# diversity_object <- download_plant_div(sites = "SRER")
 }
 \keyword{diversity}
 \keyword{download}

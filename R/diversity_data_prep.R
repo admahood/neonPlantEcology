@@ -10,10 +10,10 @@
 #' @keywords download neon diversity
 #'
 #' @examples
-#' diversity_object <- download_plant_div(sites = "SRER")
+#' # diversity_object <- download_plant_div(sites = "SRER")
 #' @export
 download_plant_div <- function(sites = "SRER"){
-  require(neonUtilities)
+  requireNamespace("neonUtilities")
   neonUtilities::loadByProduct(dpID = "DP1.10058.001",
                 site = sites,
                 check.size = F) -> x
@@ -32,8 +32,8 @@ download_plant_div <- function(sites = "SRER"){
 #' @param lf_cover the longform cover table created by using
 #' neonPlantEcology::get_longform_cover().
 name_cleaner <- function(lf_cover){
-  require(magrittr)
-  require(dplyr)
+  requireNamespace('magrittr')
+  requireNamespace('dplyr')
   all_sp=sort(unique(lf_cover$scientificName))
 
   species_names=tolower(all_sp)
@@ -102,23 +102,28 @@ name_cleaner <- function(lf_cover){
 #' @param fix_unks Should the unknown codes be altered with the "unk_fixer()"
 #' function? Defaults to false. This requires manual investigation and editing
 #' of the unk_fixer function.
-#' @examples raw_div<-download_plant_div(sites = "SRER")
-#' lf_div <- get_longform_cover(raw_div)
+#' @examples
+#' # raw_div<-download_plant_div(sites = "SRER")
+#' # lf_div <- get_longform_cover(raw_div)
 #' @export
 get_longform_cover <- function(neon_div_object,
                                trace_cover=0.5,
                                scale = "plot",
                                dissolve_years = FALSE,
                                fix_unks = FALSE){
-  require(dplyr)
-  require(tidyr)
-  require(stringr)
-  require(magrittr)
+  requireNamespace("dplyr")
+  requireNamespace("dtplyr")
+  requireNamespace("tidyr")
+  requireNamespace("stringr")
+  requireNamespace("magrittr")
+  requireNamespace("data.table")
+
   if(scale == "plot"){
     cover <- neon_div_object$div_1m2Data %>%
+      dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(divDataType == "plantSpecies") %>%
-      dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+      dplyr::mutate(year = str_c(str_sub(endDate,1,4))) %>%
       tidyr::replace_na(list(percentCover=trace_cover)) %>%
       dplyr::group_by(plotID, subplotID, taxonID, year) %>%
       # dealing with the multiple bout issue by first getting the max cover
@@ -130,13 +135,15 @@ get_longform_cover <- function(neon_div_object,
       dplyr::ungroup()  %>%
       dplyr::filter(taxonID != "") %>%
       dplyr::group_by(plotID, taxonID, year) %>%
-      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/8,
+      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(year)<2019, 8,6),
                 nativeStatusCode = first(nativeStatusCode),
                 scientificName = first(scientificName),
                 family = first(family)) %>%
-      dplyr::ungroup()
+      dplyr::ungroup() %>%
+      tibble::as_tibble()
 
     traces <- neon_div_object$div_10m2Data100m2Data %>%
+      dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(targetTaxaPresent == "Y") %>%
       dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
@@ -148,11 +155,12 @@ get_longform_cover <- function(neon_div_object,
       dplyr::ungroup() %>%
       dplyr::filter(taxonID != "") %>%
       dplyr::group_by(plotID, taxonID, year) %>%
-      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/12,
+      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(year)<2019, 12,10),
                 nativeStatusCode = first(nativeStatusCode),
                 scientificName = first(scientificName),
                 family = first(family)) %>%
-      dplyr::ungroup()
+      dplyr::ungroup() %>%
+      tibble::as_tibble()
 
     full_on_cover <- dplyr::bind_rows(cover, traces) %>%
       dplyr::group_by(plotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
@@ -179,6 +187,7 @@ get_longform_cover <- function(neon_div_object,
   }
   if(scale == "site"){
     cover <- neon_div_object$div_1m2Data %>%
+      dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(divDataType == "plantSpecies") %>%
       dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
@@ -193,13 +202,15 @@ get_longform_cover <- function(neon_div_object,
       dplyr::ungroup()  %>%
       dplyr::filter(taxonID != "") %>%
       dplyr::group_by(plotID, taxonID, year) %>%
-      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/8,
+      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(year)<2019, 8,6),
                        nativeStatusCode = first(nativeStatusCode),
                        scientificName = first(scientificName),
                        family = first(family)) %>%
-      dplyr::ungroup()
+      dplyr::ungroup() %>%
+      tibble::as_tibble()
 
     traces <- neon_div_object$div_10m2Data100m2Data %>%
+      dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(targetTaxaPresent == "Y") %>%
       dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
@@ -211,11 +222,12 @@ get_longform_cover <- function(neon_div_object,
       dplyr::ungroup() %>%
       dplyr::filter(taxonID != "") %>%
       dplyr::group_by(plotID, taxonID, year) %>%
-      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/12,
+      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(year)<2019, 12,10),
                        nativeStatusCode = first(nativeStatusCode),
                        scientificName = first(scientificName),
                        family = first(family)) %>%
-      dplyr::ungroup()
+      dplyr::ungroup() %>%
+      tibble::as_tibble()
 
     n_plots <- length(unique(cover$plotID))
 
@@ -246,6 +258,7 @@ get_longform_cover <- function(neon_div_object,
   }
 
   cover8 <- neon_div_object$div_1m2Data %>%
+    dtplyr::lazy_dt() %>%
     dplyr::mutate(endDate = as.Date(endDate)) %>%
     dplyr::filter(divDataType == "plantSpecies") %>%
     dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
@@ -268,13 +281,15 @@ get_longform_cover <- function(neon_div_object,
               family = first(family)) %>%
     dplyr::ungroup()  %>%
     dplyr::filter(taxonID != "") %>%
-    dplyr::mutate(subplotID = str_sub(subplotID, 1, 4))
+    dplyr::mutate(subplotID = str_sub(subplotID, 1, 4)) %>%
+    tibble::as_tibble()
 
 
   # 10m2,100m2 are given 0.5 (we can change later)
   # unique(x$div_10m2Data100m2Data$subplotID) # there are 12 subplots
 
   traces8 <- neon_div_object$div_10m2Data100m2Data %>%
+    dtplyr::lazy_dt() %>%
     dplyr::mutate(endDate = as.Date(endDate)) %>%
     dplyr::filter(targetTaxaPresent == "Y") %>%
     dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
@@ -289,9 +304,11 @@ get_longform_cover <- function(neon_div_object,
            subplotID != "32",
            subplotID != "40",
            subplotID != "41")  %>%
-    dplyr::mutate(subplotID = str_sub(subplotID, 1, 4))
+    dplyr::mutate(subplotID = str_sub(subplotID, 1, 4)) %>%
+    tibble::as_tibble()
 
   traces100s <- neon_div_object$div_10m2Data100m2Data %>%
+    # dtplyr::lazy_dt() %>%
     dplyr::mutate(endDate = as.Date(endDate)) %>%
     dplyr::filter(targetTaxaPresent == "Y") %>%
     dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
@@ -306,7 +323,8 @@ get_longform_cover <- function(neon_div_object,
            subplotID == "31"| # these are the 100m2 subplots under which two 1m2 and 10m2 pairs are nested
              subplotID == "32"|
              subplotID == "40"|
-             subplotID == "41")
+             subplotID == "41") %>%
+    tibble::as_tibble()
 
   # aggregating at different scales ----------------------------------------------
   cover8_1m2 <- cover8 %>%
@@ -316,7 +334,7 @@ get_longform_cover <- function(neon_div_object,
     dplyr::mutate(site = str_sub(plotID, 1,4))
   if(fix_unks) cover8_1m2 <- unk_fixer(cover8_1m2)
 
-  cover8_1m2_10m2 <- rbind(cover8, traces8) %>%
+  cover8_1m2_10m2 <- dplyr::bind_rows(cover8, traces8) %>%
     dplyr::group_by(plotID,subplotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
     dplyr::summarise(cover = sum(cover)) %>%
     dplyr::ungroup()%>%
@@ -379,10 +397,10 @@ get_community_matrix <- function(neon_div_object,
                    trace_cover = 0.5,
                    fix_unks = FALSE,
                    binary=FALSE) {
-  require(tidyr)
-  require(dplyr)
-  require(tibble)
-  require(magrittr)
+  requireNamespace("tidyr")
+  requireNamespace("dplyr")
+  requireNamespace("tibble")
+  requireNamespace("magrittr")
 
   if(!binary){
     return(
@@ -447,11 +465,8 @@ get_community_matrix <- function(neon_div_object,
 #' @param species Which specific species should the metrics be calculated for?
 #' This can be a concatenated vector if the user want more than one species.
 #' @examples
-#' x <- download_plant_div("SRER")
-#' plot_level <- neonPlantEcology::get_diversity_info(neon_div_object = x, scale = "plot")
-#' hot_deserts <- c("JORN", "SRER) %>%
-#'   download_plant_div() %>%
-#'   get_diversity_info(scale = "site")
+#' # x <- download_plant_div("SRER")
+#' # plot_level <- neonPlantEcology::get_diversity_info(neon_div_object = x, scale = "plot")
 #' @export
 get_diversity_info <- function(neon_div_object,
                                scale = "plot",
@@ -462,10 +477,10 @@ get_diversity_info <- function(neon_div_object,
                                name_cleaner = FALSE,
                                families = NA,
                                spp = NA) {
-  require(tidyr)
-  require(dplyr)
-  require(vegan)
-  require(magrittr)
+  requireNamespace("tidyr")
+  requireNamespace("dplyr")
+  requireNamespace('vegan')
+  requireNamespace("magrittr")
   # Data wrangling =============================================================
 
   full_on_cover <- get_longform_cover(neon_div_object,
@@ -992,4 +1007,100 @@ get_diversity_info <- function(neon_div_object,
   return(final_table)
 }
 
+#' Change the native status code for a particular taxon at a particular site
+#'
+#' Sometimes even though a particular species identity is not known, the end
+#' user can still determine its native status. For example, maybe the taxon
+#' was identified to the genus level, and the local flora confirms that all
+#' plants in that genus are native at that particular site. This function
+#' allows for post-hoc modification of the native status code for cases like this.
+#'
+#' @param df is the data frame returned by get_longform_cover
+#' @param taxon is the taxonID column in the data frame
+#' @param site is the identity of the NEON site (e.g. "JORN")
+#' @param new_code is the NativeStatusCode value to change to
+#'
+#' @examples
+#'
+#' # download the NEON plant diversity data for the Jornada Experimental Range
+#' # raw_div<-download_plant_div(sites = "JORN")
+#'
+#' # convert to longform cover
+#' # lf_div <- get_longform_cover(raw_div)
+#'
+#' # change all of the unknown Abutilon spp to native
+#' # modified_lf_div <- change_native_status_code(lf_div, "ABUTI", "JORN", "N")
+#'
+#' @export
+change_native_status_code <- function(df, taxon, site, new_code){
+  requireNamespace('dplyr')
+  return(
+    df %>%
+      dplyr::mutate(nativeStatusCode = replace(nativeStatusCode,
+                                        taxonID == taxon & site == site,
+                                        new_code))
+  )
+}
 
+
+
+#'Download and join spatial information to a neonPlantEcology output data frame
+#'
+#'@param df a neonPlantEcology-produced data frame
+#'@param type what type of ancillary data structure you want joined. Can be
+#'"spatial", which will turn the data frame into an sf data frame, or "latlong",
+#'which will add the latitudes and longitudes and other ancillary data as
+#'columns only.
+#'@param dest_dir where to download the files
+#'@param input to what kind of neonPlantEcology product are you appending? Can
+#'be "community_matrix", "longform_cover", or "summary_info".
+#'
+#'
+#'@export
+get_plot_centroids <- function(df, dest_dir = file.path(getwd(), "tmp"), type = "spatial", input = "community_matrix"){
+  requireNamespace("stringr")
+  requireNamespace("sf")
+  requireNamespace("tibble")
+  requireNamespace("dplyr")
+  shp_file <- file.path(dest_dir, "All_NEON_TOS_Plots_V8/All_NEON_TOS_Plots_V8/All_NEON_TOS_Plot_Centroids_V8.shp")
+  if(!file.exists(shp_file)){
+    url <- "https://www.neonscience.org/sites/default/files/All_NEON_TOS_Plots_V8.zip"
+    file <- stringr::str_split(url, "/", simplify = T)[length(str_split(url, "/", simplify = T))]
+    exdir <-file.path(dest_dir, str_split(file, "\\.",simplify=T)[1])
+    dir.create(exdir,recursive = T)
+
+    download.file(url=url, destfile = file.path(dest_dir,file))
+    unzip(zipfile = file.path(dest_dir,file),
+          exdir = exdir)
+  }
+  if(type == "spatial") neon_plots <- sf::st_read(shp_file)
+  if(type == "latlong") neon_plots <- sf::st_read(stringr::str_replace(shp_file, ".shp", ".csv"))
+
+  if(input == "community_matrix") outdf <- df %>%
+      tibble::rownames_to_column("plot_info") %>%
+      dplyr::mutate(plotID = str_sub(plot_info,1,8)) %>%
+      dplyr::left_join(neon_plots, by = "plotID")
+  if(input == "longform_cover") outdf <- df %>%
+      dplyr::left_join(neon_plots, by = "plotID")
+  if(input == "summary_info") outdf <- df %>%
+      dplyr::left_join(neon_plots, by = "plotID")
+  return(df)
+}
+
+#' Get plot information from a community matrix
+#'
+#' The get_community_matrix() function is designed to work with the vegan
+#' package, and one of the requirements of vegan functions is that there are
+#' only numeric columns in community matrices. Therefore, all of the metatdata
+#' is collapsed into the rownames. This function allows you to extract that
+#' very basic metadata back out to a more easily interpretable data frame.
+#'
+#'@param comm the community matrix object created by get_community_matrix()
+#'@export
+get_plot_info <- function(comm){
+  return(comm %>%
+           tibble::rownames_to_column("rowname")%>%
+           tidyr::separate(rowname, into = c("site", "plot", "scale", "year"), remove = F) %>%
+           dplyr::mutate(plotID = str_c(site, "_", plot)) %>%
+           dplyr::select(site, plot, scale, year, plotID, rowname))
+}

@@ -14,5 +14,11 @@ LazyData: true
 Imports: neonUtilities,
          tidyverse,
          ggpubr,
-         vegan
-RoxygenNote: 7.2.1
+         vegan,
+         dplyr,
+         sf,
+         stringr,
+         magrittr,
+         tibble,
+         tidyr
+RoxygenNote: 7.2.3

@@ -17,7 +17,7 @@
 #' Manually change unknown native status codes
 #'
 #' Usually at any NEON site, there will be plenty of unknown plants for various
-#' reasons. Often, it is possible to use the information that is availabe to
+#' reasons. Often, it is possible to use the information that is available to
 #' at least determine if a particular unknown species is native or introduced.
 #' For example, it might be documented in the local flora that all plants of a
 #' certain family or genus are native. This function allows the user to manually
@@ -106,6 +106,8 @@ unk_fixer <- function(df){
 # full_on_cover[full_on_cover$taxonID == "SISYM","nativeStatusCode"] <-"I"
 # full_on_cover[full_on_cover$taxonID == "THYMO","nativeStatusCode"] <-"N"
 }
+
+
 
 
 # # investigating erodium unk

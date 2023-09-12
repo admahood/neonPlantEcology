@@ -8,7 +8,7 @@ name_cleaner(lf_cover)
 }
 \arguments{
 \item{lf_cover}{the longform cover table created by using
-neondiveRsity::get_longform_cover().}
+neonPlantEcology::get_longform_cover().}
 }
 \description{
 This function does some straight forward grep-ing to aggregate to clean up
