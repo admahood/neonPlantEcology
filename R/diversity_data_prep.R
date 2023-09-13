@@ -431,9 +431,10 @@ get_community_matrix <- function(neon_div_object,
                     values_from = cover,
                     values_fill = list(cover=0)) %>%
         tibble::column_to_rownames("p_sp_y") %>%
+        dplyr::mutate_all(function(x) ifelse(x>0,1,0)) %>%
         as.data.frame()
 
-      return(ifelse(bin>0, 1,0))
+      return(bin)
   }
 }
 
@@ -647,7 +648,7 @@ get_diversity_info <- function(neon_div_object,
                        values_from = rel_cover,
                        values_fill = list(rel_cover = 0))%>%
     dplyr::select(-contains("rel_cover_exotic")) %>%
-    left_join(n_e_cover, by = c("site", "plotID", "subplotID","year"))
+    dplyr::left_join(n_e_cover, by = c("site", "plotID", "subplotID","year"))
 
 
 
@@ -817,7 +818,7 @@ get_diversity_info <- function(neon_div_object,
     dplyr::select(-nativeStatusCode)
   }
   # exotic  diversity and evenness ===============
-  if(nrow(filter(full_on_cover,nativeStatusCode=="I"))>0){
+  if(nrow(dplyr::filter(full_on_cover,nativeStatusCode=="I"))>0){
   vegan_friendly_div_ex <- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("I")) %>%
     dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
@@ -862,7 +863,7 @@ get_diversity_info <- function(neon_div_object,
 
   nspp_n <- vegan_friendly_div_n %>%
     dplyr::select(site, plotID, subplotID,year) %>%
-    mutate(shannon_native = vegan::diversity(vegan_friendly_div_n %>%
+    dplyr::mutate(shannon_native = vegan::diversity(vegan_friendly_div_n %>%
                                                dplyr::select(-site,
                                                              -plotID,
                                                              -subplotID,
@@ -978,7 +979,7 @@ get_diversity_info <- function(neon_div_object,
     dplyr::left_join(div_total, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::left_join(div_total_f, by = c("site", "plotID", "subplotID", "year")) %>%
     dplyr::mutate(scale = scale,
-                  invaded = if_else(cover_exotic > 0, "invaded", "not_invaded"))
+                  invaded = ifelse(cover_exotic > 0, "invaded", "not_invaded"))
   if(exists("bd")){
     final_table <- final_table %>%
       dplyr::left_join(bd, by = c("site", "plotID", "subplotID", "year"))
@@ -1061,21 +1062,23 @@ change_native_status_code <- function(df, taxon, site, new_code){
 #'
 #'
 #'@export
-get_plot_centroids <- function(df, dest_dir = file.path(getwd(), "tmp"), type = "spatial", input = "community_matrix"){
+get_plot_centroids <- function(df,
+                               dest_dir = file.path(getwd(), "tmp"),
+                               type = "latlong",
+                               spatial_only = T,
+                               input = "community_matrix"){
   requireNamespace("stringr")
   requireNamespace("sf")
   requireNamespace("tibble")
   requireNamespace("dplyr")
-  shp_file <- file.path(dest_dir, "All_NEON_TOS_Plots_V8/All_NEON_TOS_Plots_V8/All_NEON_TOS_Plot_Centroids_V8.shp")
+  shp_file <- file.path(dest_dir, "All_NEON_TOS_Plots_V8/All_NEON_TOS_Plot_Centroids_V8.shp")
   if(!file.exists(shp_file)){
     url <- "https://www.neonscience.org/sites/default/files/All_NEON_TOS_Plots_V8.zip"
-    file <- stringr::str_split(url, "/", simplify = T)[length(str_split(url, "/", simplify = T))]
-    exdir <-file.path(dest_dir, str_split(file, "\\.",simplify=T)[1])
-    dir.create(exdir,recursive = T)
-
-    download.file(url=url, destfile = file.path(dest_dir,file))
+    file <- stringr::str_split(url, "/", simplify = T)[length(stringr::str_split(url, "/", simplify = T))]
+    dir.create(dest_dir, recursive = T)
+    download.file(url=url, destfile = file.path(dest_dir, file))
     unzip(zipfile = file.path(dest_dir,file),
-          exdir = exdir)
+          exdir = dest_dir)
   }
   if(type == "spatial") neon_plots <- sf::st_read(shp_file)
   if(type == "latlong") neon_plots <- sf::st_read(stringr::str_replace(shp_file, ".shp", ".csv"))
@@ -1088,8 +1091,12 @@ get_plot_centroids <- function(df, dest_dir = file.path(getwd(), "tmp"), type = 
       dplyr::left_join(neon_plots, by = "plotID")
   if(input == "summary_info") outdf <- df %>%
       dplyr::left_join(neon_plots, by = "plotID")
-  return(df)
+
+  if(spatial_only && type == "spatial") outdf <- dplyr::select(outdf, plotID )
+  if(spatial_only && type == "latlong") outdf <- dplyr::select(outdf, plotID, latitude, longitude)
+  return(outdf)
 }
+
 
 #' Get plot information from a community matrix
 #'

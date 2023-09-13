@@ -7,7 +7,8 @@
 get_plot_centroids(
   df,
   dest_dir = file.path(getwd(), "tmp"),
-  type = "spatial",
+  type = "latlong",
+  spatial_only = T,
   input = "community_matrix"
 )
 }
