@@ -93,6 +93,9 @@ name_cleaner <- function(lf_cover){
 #' has been removed. Column names that remain are plotID, subplotID, year,
 #' taxonID, cover, scientificName, nativeStatusCode, family, and site.
 #'
+#' @import data.table
+#' @importFrom data.table :=
+#' @importFrom dtplyr lazy_dt
 #' @param neon_div_object the raw diversity data downloaded using
 #' neonPlantEcology::download_plant_div() or the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
@@ -112,20 +115,20 @@ get_longform_cover <- function(neon_div_object,
                                dissolve_years = FALSE,
                                fix_unks = FALSE){
   .datatable.aware <- TRUE
+  requireNamespace("data.table")
   requireNamespace("dplyr")
   requireNamespace("dtplyr")
   requireNamespace("tidyverse")
   requireNamespace("tidyr")
   requireNamespace("stringr")
   requireNamespace("magrittr")
-  requireNamespace("data.table")
 
   if(scale == "plot"){
     cover <- neon_div_object$div_1m2Data %>%
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(divDataType == "plantSpecies") %>%
-      dplyr::mutate(year = str_c(str_sub(endDate,1,4))) %>%
+      dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4))) %>%
       tidyr::replace_na(list(percentCover=trace_cover)) %>%
       dplyr::group_by(plotID, subplotID, taxonID, year) %>%
       # dealing with the multiple bout issue by first getting the max cover
@@ -148,7 +151,7 @@ get_longform_cover <- function(neon_div_object,
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(targetTaxaPresent == "Y") %>%
-      dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+      dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
       dplyr::group_by(plotID, subplotID, taxonID, year) %>%
       dplyr::summarise(cover = trace_cover,
                 scientificName = first(scientificName),
@@ -168,7 +171,7 @@ get_longform_cover <- function(neon_div_object,
       dplyr::group_by(plotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
       dplyr::summarise(cover = sum(cover)) %>%
       dplyr::ungroup()%>%
-      dplyr::mutate(site = str_sub(plotID, 1,4),
+      dplyr::mutate(site = stringr::str_sub(plotID, 1,4),
              subplotID = "plot")
     if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
 
@@ -192,7 +195,7 @@ get_longform_cover <- function(neon_div_object,
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(divDataType == "plantSpecies") %>%
-      dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+      dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
       tidyr::replace_na(list(percentCover=trace_cover)) %>%
       dplyr::group_by(plotID, subplotID, taxonID, year) %>%
       # dealing with the multiple bout issue by first getting the max cover
@@ -215,7 +218,7 @@ get_longform_cover <- function(neon_div_object,
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(targetTaxaPresent == "Y") %>%
-      dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+      dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
       dplyr::group_by(plotID, subplotID, taxonID, year) %>%
       dplyr::summarise(cover = trace_cover,
                        scientificName = first(scientificName),
@@ -237,7 +240,7 @@ get_longform_cover <- function(neon_div_object,
       dplyr::group_by(plotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
       dplyr::summarise(cover = sum(cover)) %>%
       dplyr::ungroup()%>%
-      dplyr::mutate(site = str_sub(plotID, 1,4)) %>%
+      dplyr::mutate(site = stringr::str_sub(plotID, 1,4)) %>%
       dplyr::group_by(site, taxonID, year, nativeStatusCode, scientificName, family) %>%
       dplyr::summarise(cover = sum(cover)/n_plots) %>%
       dplyr::mutate(subplotID = "site",
@@ -263,14 +266,14 @@ get_longform_cover <- function(neon_div_object,
     dtplyr::lazy_dt() %>%
     dplyr::mutate(endDate = as.Date(endDate)) %>%
     dplyr::filter(divDataType == "plantSpecies") %>%
-    dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+    dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
     # entries in the df with no values but species was there
     # i.e. someone put the sp. code and forgot to fill in the number
     # putting as trace cover value
     tidyr::replace_na(list(percentCover=trace_cover)) %>%
     dplyr::mutate(endDate = as.Date(endDate)) %>%
     dplyr::filter(divDataType == "plantSpecies") %>%
-    dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+    dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
     dplyr::group_by(plotID, subplotID, taxonID, year) %>%
     # dealing with the multiple bout issue by first getting the mean cover
     # per sampling effort, without aggregating, then later we'll aggregate.
@@ -283,7 +286,7 @@ get_longform_cover <- function(neon_div_object,
               family = first(family)) %>%
     dplyr::ungroup()  %>%
     dplyr::filter(taxonID != "") %>%
-    dplyr::mutate(subplotID = str_sub(subplotID, 1, 4)) %>%
+    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) %>%
     tibble::as_tibble()
 
 
@@ -294,7 +297,7 @@ get_longform_cover <- function(neon_div_object,
     dtplyr::lazy_dt() %>%
     dplyr::mutate(endDate = as.Date(endDate)) %>%
     dplyr::filter(targetTaxaPresent == "Y") %>%
-    dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+    dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
     dplyr::group_by(plotID, subplotID, taxonID, year) %>%
     dplyr::summarise(cover = trace_cover,
               scientificName = first(scientificName),
@@ -306,21 +309,21 @@ get_longform_cover <- function(neon_div_object,
            subplotID != "32",
            subplotID != "40",
            subplotID != "41")  %>%
-    dplyr::mutate(subplotID = str_sub(subplotID, 1, 4)) %>%
+    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) %>%
     tibble::as_tibble()
 
   traces100s <- neon_div_object$div_10m2Data100m2Data %>%
     dtplyr::lazy_dt() %>%
     dplyr::mutate(endDate = as.Date(endDate)) %>%
     dplyr::filter(targetTaxaPresent == "Y") %>%
-    dplyr::mutate(year = str_c(str_sub(endDate,1,4)))%>%
+    dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
     dplyr::group_by(plotID, subplotID, taxonID, year) %>%
     dplyr::summarise(cover = trace_cover,
               scientificName = first(scientificName),
               nativeStatusCode = first(nativeStatusCode),
               family = first(family)) %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(site = str_sub(plotID, 1,4)) %>%
+    dplyr::mutate(site = stringr::str_sub(plotID, 1,4)) %>%
     dplyr::filter(taxonID != "",
            subplotID == "31"| # these are the 100m2 subplots under which two 1m2 and 10m2 pairs are nested
              subplotID == "32"|
@@ -333,18 +336,18 @@ get_longform_cover <- function(neon_div_object,
     dplyr::group_by(plotID, subplotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
     dplyr::summarise(cover = sum(cover)) %>%
     dplyr::ungroup()%>%
-    dplyr::mutate(site = str_sub(plotID, 1,4))
+    dplyr::mutate(site = stringr::str_sub(plotID, 1,4))
   if(fix_unks) cover8_1m2 <- unk_fixer(cover8_1m2)
 
   cover8_1m2_10m2 <- dplyr::bind_rows(cover8, traces8) %>%
     dplyr::group_by(plotID,subplotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
     dplyr::summarise(cover = sum(cover)) %>%
     dplyr::ungroup()%>%
-    dplyr::mutate(site = str_sub(plotID, 1,4))
+    dplyr::mutate(site = stringr::str_sub(plotID, 1,4))
   if(fix_unks) cover8_1m2_10m2<-cover8_1m2_10m2 %>%  unk_fixer()
 
   cover4 <- cover8_1m2_10m2 %>%
-    dplyr::mutate(subplotID = str_sub(subplotID, 1,2)) %>%
+    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1,2)) %>%
     dplyr::bind_rows(traces100s) %>% # adding in the 100m2 subplots
     dplyr::group_by(plotID, subplotID, year, taxonID) %>%
     dplyr::summarise(cover = sum(cover), # this is summing together repeats from the rbinding
@@ -372,7 +375,6 @@ get_longform_cover <- function(neon_div_object,
       dplyr::ungroup() %>%
       dplyr::mutate(year = year_range)
   }
-
 
   return(full_on_cover)
 }
@@ -526,7 +528,7 @@ get_diversity_info <- function(neon_div_object,
           bd[counter, 2] <- out[2] %>% unname
           bd[counter, 3] <- i
           bd[counter, 4] <- j
-          bd[counter, 5] <- str_sub(j, 1,4)
+          bd[counter, 5] <- stringr::str_sub(j, 1,4)
           bd[counter, 6] <- "plot"
 
           counter <- counter+1}
@@ -602,7 +604,7 @@ get_diversity_info <- function(neon_div_object,
 
   n_i_rel_cover <- n_i %>%
     dplyr::select(site, plotID, subplotID,year, nativeStatusCode, rel_cover) %>%
-    dplyr::mutate(nativeStatusCode = lut_nsc[nativeStatusCode] %>% str_c("rel_",.)) %>%
+    dplyr::mutate(nativeStatusCode = lut_nsc[nativeStatusCode] %>% stringr::str_c("rel_",.)) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                 values_from = rel_cover,
                 values_fill = list(rel_cover = 0))%>%
@@ -640,7 +642,7 @@ get_diversity_info <- function(neon_div_object,
 
   n_e_rel_cover <- n_e %>%
     dplyr::select(site, plotID, subplotID,year, nativeStatusCode, rel_cover) %>%
-    dplyr::mutate(nativeStatusCode = lut_ne[nativeStatusCode] %>% str_c("rel_",.)) %>%
+    dplyr::mutate(nativeStatusCode = lut_ne[nativeStatusCode] %>% stringr::str_c("rel_",.)) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                        values_from = rel_cover,
                        values_fill = list(rel_cover = 0))%>%
@@ -1080,7 +1082,7 @@ get_plot_centroids <- function(df, dest_dir = file.path(getwd(), "tmp"), type = 
 
   if(input == "community_matrix") outdf <- df %>%
       tibble::rownames_to_column("plot_info") %>%
-      dplyr::mutate(plotID = str_sub(plot_info,1,8)) %>%
+      dplyr::mutate(plotID = stringr::str_sub(plot_info,1,8)) %>%
       dplyr::left_join(neon_plots, by = "plotID")
   if(input == "longform_cover") outdf <- df %>%
       dplyr::left_join(neon_plots, by = "plotID")
@@ -1103,6 +1105,6 @@ get_plot_info <- function(comm){
   return(comm %>%
            tibble::rownames_to_column("rowname")%>%
            tidyr::separate(rowname, into = c("site", "plot", "scale", "year"), remove = F) %>%
-           dplyr::mutate(plotID = str_c(site, "_", plot)) %>%
+           dplyr::mutate(plotID = stringr::str_c(site, "_", plot)) %>%
            dplyr::select(site, plot, scale, year, plotID, rowname))
 }
