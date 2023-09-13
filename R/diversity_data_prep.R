@@ -1041,7 +1041,7 @@ npe_diversity_info <- function(neon_div_object,
 
   # seems crazy, i know... but those NAs should all definitely be zero
   final_table <- final_table %>%
-    dplyr::mutate_all(functions(replace(., is.na(.), 0))) %>%
+    dplyr::mutate_all(list(~ replace(., is.na(.), 0))) %>%
     unique() # temporary fix, for some reason it's returning repeats of each row - there's mutate somewhere where there needs to be a summarise maybe
 
   return(final_table)
