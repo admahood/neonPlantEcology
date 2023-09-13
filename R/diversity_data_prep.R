@@ -12,11 +12,50 @@
 #' @examples
 #' # diversity_object <- download_plant_div(sites = "SRER")
 #' @export
-download_plant_div <- function(sites = "SRER"){
+npe_download_plant_div <- function(sites = "SRER"){
   requireNamespace("neonUtilities")
   neonUtilities::loadByProduct(dpID = "DP1.10058.001",
                 site = sites,
                 check.size = F) -> x
+  return(x)
+}
+
+
+#' Data downloader
+#'
+#' A wrapper function to download data from the NEON API. Some commonly used
+#' products are provided as plain language options, otherwise the user
+#' can enter the product ID number (dpID).
+#'
+#' @param sites a vector of NEON site abbreviations. Defaults to "SRER"
+#' @param product a plain language vector of the data product to be downloaded.
+#' Can be "plant_diversity", "litterfall", "woody_veg_structure",
+#' "belowground_biomass", "herbaceous_clip", "coarse_downed_wood",
+#' or "soil_microbe_biomass"
+#' @param dpID if you need a data product not given as one of the product
+#' options, set the data product ID here (e.g. "DP1.10023.001").
+#' @keywords download neon diversity
+#'
+#' @examples
+#' # diversity_object <- npe_download(sites = "SRER")
+#' @export
+npe_download <- function(sites = "SRER",
+                         dpID = NA,
+                         product = "plant_diversity"){
+  requireNamespace("neonUtilities")
+
+  if(!is.na(dpID)){dpID <- dpID}else{
+    if(product == "plant_diversity") dpID <- "DP1.10058.001"
+    if(product == "litterfall") dpID <- "DP1.10033.001"
+    if(product == "woody_veg_structure") dpID <- "DP1.10098.001"
+    if(product == "belowground_biomass") dpID <- "DP1.10067.001"
+    if(product == "herbaceous_clip") dpID <- "DP1.10023.001"
+    if(product == "coarse_downed_wood") dpID <- "DP1.10014.001"
+    if(product == "soil_microbe_biomass") dpID <- "DP1.10104.001"
+  }
+  neonUtilities::loadByProduct(dpID = dpID,
+                               site = sites,
+                               check.size = F) -> x
   return(x)
 }
 
@@ -30,8 +69,8 @@ download_plant_div <- function(sites = "SRER"){
 #' some of the latin names
 #'
 #' @param lf_cover the longform cover table created by using
-#' neonPlantEcology::get_longform_cover().
-name_cleaner <- function(lf_cover){
+#' neonPlantEcology::npe_longform().
+npe_name_cleaner <- function(lf_cover){
   requireNamespace('magrittr')
   requireNamespace('dplyr')
   all_sp=sort(unique(lf_cover$scientificName))
@@ -80,7 +119,7 @@ name_cleaner <- function(lf_cover){
 }
 
 #######################################################################
-# get_longform_cover creates a long dataframe for cover from the neon #
+# npe_longform creates a long dataframe for cover from the neon #
 # diversity object (used in all of the following functions)           #
 #######################################################################
 
@@ -106,10 +145,10 @@ name_cleaner <- function(lf_cover){
 #' function? Defaults to false. This requires manual investigation and editing
 #' of the unk_fixer function.
 #' @examples
-#' # raw_div<-download_plant_div(sites = "SRER")
-#' # lf_div <- get_longform_cover(raw_div)
+#' # raw_div <- npe_download_plant_div(sites = "SRER")
+#' # lf_div <- npe_longform(raw_div)
 #' @export
-get_longform_cover <- function(neon_div_object,
+npe_longform <- function(neon_div_object,
                                trace_cover=0.5,
                                scale = "plot",
                                dissolve_years = FALSE,
@@ -381,7 +420,7 @@ get_longform_cover <- function(neon_div_object,
 
 #' Create a species abundance or occurrence matrix
 #'
-#' get_community_matrix creates a wide matrix of species cover or binary (presence/absence)
+#' npe_community_matrix creates a wide matrix of species cover or binary (presence/absence)
 #' values with the plot/subplot/year as rownames. This is useful for the vegan
 #' package, hence the name.
 #'
@@ -396,7 +435,7 @@ get_longform_cover <- function(neon_div_object,
 #' of the unk_fixer function.
 #' @param binary should the matrix be converted from percent cover to binary?
 #' @export
-get_community_matrix <- function(neon_div_object,
+npe_community_matrix <- function(neon_div_object,
                    scale="plot",
                    trace_cover = 0.5,
                    fix_unks = FALSE,
@@ -409,7 +448,7 @@ get_community_matrix <- function(neon_div_object,
   if(!binary){
     return(
       neon_div_object %>%
-        get_longform_cover(scale = scale, trace_cover = trace_cover, fix_unks = FALSE) %>%
+        npe_longform(scale = scale, trace_cover = trace_cover, fix_unks = FALSE) %>%
         dplyr::mutate(p_sp_y = paste(plotID, subplotID, year, sep = "_")) %>%
         dplyr::select(p_sp_y, taxonID, cover) %>%
         na.omit() %>% # not sure how, but there are some NA's where they shouldn't be
@@ -422,7 +461,7 @@ get_community_matrix <- function(neon_div_object,
     )
   }else{
       bin<-neon_div_object %>%
-        get_longform_cover(scale = scale, trace_cover = trace_cover, fix_unks = FALSE) %>%
+        npe_longform(scale = scale, trace_cover = trace_cover, fix_unks = FALSE) %>%
         dplyr::mutate(p_sp_y = paste(plotID, subplotID, year, sep = "_")) %>%
         dplyr::select(p_sp_y, taxonID, cover) %>%
         na.omit() %>% # not sure how, but there are some NA's where they shouldn't be
@@ -441,7 +480,7 @@ get_community_matrix <- function(neon_div_object,
 
 #' Get plant biodiversity information for NEON plots
 #'
-#' get_diversity_info calculates various biodiversity and cover indexes at the
+#' npe_diversity_info calculates various biodiversity and cover indexes at the
 #' plot or subplot scale at each timestep for each plot. Outputs a data frame
 #' with number of species, percent cover, relative percent cover (relative to the cover of the other plants), and shannon
 #' diversity, for natives, exotics and all species. Also calculates all of these
@@ -456,7 +495,7 @@ get_community_matrix <- function(neon_div_object,
 #' @param fix_unks Should the unknown codes be altered with the "unk_fixer()"
 #' function? Defaults to false. This requires manual investigation and editing
 #' of the unk_fixer function.
-#' @param dissolve_years by default get_diversity_info groups everything by year.
+#' @param dissolve_years by default npe_diversity_info groups everything by year.
 #' The user may set this argument to true to have the function aggregate the years
 #' together and then calculate diversity and cover indexes.
 #' @param betadiversity If evaluating at the plot or site level, should beta
@@ -471,9 +510,9 @@ get_community_matrix <- function(neon_div_object,
 #' This can be a concatenated vector if the user want more than one species.
 #' @examples
 #' # x <- download_plant_div("SRER")
-#' # plot_level <- neonPlantEcology::get_diversity_info(neon_div_object = x, scale = "plot")
+#' # plot_level <- neonPlantEcology::npe_diversity_info(neon_div_object = x, scale = "plot")
 #' @export
-get_diversity_info <- function(neon_div_object,
+npe_diversity_info <- function(neon_div_object,
                                scale = "plot",
                                trace_cover = 0.5,
                                fix_unks = FALSE,
@@ -488,7 +527,7 @@ get_diversity_info <- function(neon_div_object,
   requireNamespace("magrittr")
   # Data wrangling =============================================================
 
-  full_on_cover <- get_longform_cover(neon_div_object,
+  full_on_cover <- npe_longform(neon_div_object,
                                       scale = scale,
                                       dissolve_years = dissolve_years,
                                       fix_unks = fix_unks)
@@ -500,7 +539,7 @@ get_diversity_info <- function(neon_div_object,
   # Betadiversity ===================
   if(betadiversity == TRUE & scale == "plot"){
 
-     ten_m <- get_longform_cover(neon_div_object,
+     ten_m <- npe_longform(neon_div_object,
                                  scale = "10m",
                                  dissolve_years = dissolve_years,
                                  fix_unks = fix_unks) %>%
@@ -541,7 +580,7 @@ get_diversity_info <- function(neon_div_object,
 
   if(betadiversity == TRUE & scale == "site"){
 
-    plot_scale <- get_longform_cover(neon_div_object,
+    plot_scale <- npe_longform(neon_div_object,
                                 scale = "plot",
                                 dissolve_years = dissolve_years,
                                 fix_unks = fix_unks) %>%
@@ -1002,12 +1041,8 @@ get_diversity_info <- function(neon_div_object,
 
   # seems crazy, i know... but those NAs should all definitely be zero
   final_table <- final_table %>%
-    dplyr::mutate_all(funs(replace(., is.na(.), 0))) %>%
+    dplyr::mutate_all(functions(replace(., is.na(.), 0))) %>%
     unique() # temporary fix, for some reason it's returning repeats of each row - there's mutate somewhere where there needs to be a summarise maybe
-
-
-
-
 
   return(final_table)
 }
@@ -1020,7 +1055,7 @@ get_diversity_info <- function(neon_div_object,
 #' plants in that genus are native at that particular site. This function
 #' allows for post-hoc modification of the native status code for cases like this.
 #'
-#' @param df is the data frame returned by get_longform_cover
+#' @param df is the data frame returned by npe_longform
 #' @param taxon is the taxonID column in the data frame
 #' @param site is the identity of the NEON site (e.g. "JORN")
 #' @param new_code is the NativeStatusCode value to change to
@@ -1031,13 +1066,13 @@ get_diversity_info <- function(neon_div_object,
 #' # raw_div<-download_plant_div(sites = "JORN")
 #'
 #' # convert to longform cover
-#' # lf_div <- get_longform_cover(raw_div)
+#' # lf_div <- npe_longform(raw_div)
 #'
 #' # change all of the unknown Abutilon spp to native
 #' # modified_lf_div <- change_native_status_code(lf_div, "ABUTI", "JORN", "N")
 #'
 #' @export
-change_native_status_code <- function(df, taxon, site, new_code){
+npe_change_native_status <- function(df, taxon, site, new_code){
   requireNamespace('dplyr')
   return(
     df %>%
@@ -1062,7 +1097,7 @@ change_native_status_code <- function(df, taxon, site, new_code){
 #'
 #'
 #'@export
-get_plot_centroids <- function(df,
+npe_plot_centroids <- function(df,
                                dest_dir = file.path(getwd(), "tmp"),
                                type = "latlong",
                                spatial_only = T,
@@ -1100,18 +1135,103 @@ get_plot_centroids <- function(df,
 
 #' Get plot information from a community matrix
 #'
-#' The get_community_matrix() function is designed to work with the vegan
+#' The npe_community_matrix() function is designed to work with the vegan
 #' package, and one of the requirements of vegan functions is that there are
 #' only numeric columns in community matrices. Therefore, all of the metatdata
 #' is collapsed into the rownames. This function allows you to extract that
 #' very basic metadata back out to a more easily interpretable data frame.
 #'
-#'@param comm the community matrix object created by get_community_matrix()
+#'@param comm the community matrix object created by npe_community_matrix()
 #'@export
-get_plot_info <- function(comm){
+npe_plot_info <- function(comm){
   return(comm %>%
            tibble::rownames_to_column("rowname")%>%
            tidyr::separate(rowname, into = c("site", "plot", "scale", "year"), remove = F) %>%
            dplyr::mutate(plotID = stringr::str_c(site, "_", plot)) %>%
            dplyr::select(site, plot, scale, year, plotID, rowname))
+}
+
+
+#' get cover by species
+#'
+#' This extracts the cover and relative cover of all species into a data frame.
+#' This is basically the same as npe_community_matrix, except the species names
+#' are full, it's in a tibble format, and the plot information is not collapsed
+#' into the row names.
+#'
+#' @export
+# Cover by species ===========================================================
+npe_species <- function(neon_div_object,
+                        scale = "plot",
+                        trace_cover = 0.5,
+                        fix_unks = FALSE,
+                        dissolve_years = FALSE,
+                        name_cleaner = FALSE) {
+  requireNamespace("tidyr")
+  requireNamespace("dplyr")
+  requireNamespace('vegan')
+  requireNamespace("magrittr")
+  # Data wrangling =============================================================
+
+  full_on_cover <- npe_longform(neon_div_object,
+                                scale = scale,
+                                dissolve_years = dissolve_years,
+                                fix_unks = fix_unks)
+  if(name_cleaner) full_on_cover <- name_cleaner(full_on_cover)
+
+  template <- full_on_cover %>%
+    dplyr::select(site, plotID, subplotID, year)
+
+  bysp <- full_on_cover%>%
+    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::mutate(total_cover = sum(cover))%>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(site, plotID, subplotID, year, scientificName) %>%
+    dplyr::summarise(cover = sum(cover),
+                     total_cover = first(total_cover)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(rel_cover = cover/total_cover) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(gen = stringr::str_split(scientificName,
+                                           pattern = " ",
+                                           simplify = TRUE)[,1],
+                  sp = stringr::str_split(scientificName,
+                                          pattern = " ",
+                                          simplify = TRUE)[,2],
+                  gen_sp = stringr::str_c(gen, " ", sp)) %>%
+    dplyr::mutate(genus = stringr::str_split(scientificName,
+                                             pattern = " ",
+                                             simplify = TRUE)[,1],
+                  species = stringr::str_split(scientificName,
+                                               pattern = " ",
+                                               simplify = TRUE)[,2],
+                  gen_sp = stringr::str_c(genus, " ", species))
+
+  rc_sp <- bysp%>%
+    dplyr::select(site, plotID, subplotID,year, gen_sp, rel_cover) %>%
+    dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_"),
+                  variable = "relative_cover") %>%
+    # the following 3 lines fix some kind of duplicate problem that happened here
+    # need to fix something upstream - jan 14 fixed it, need to test still
+    dplyr::group_by(site, plotID, subplotID,year, gen_sp) %>%
+    dplyr::summarise(rel_cover = mean(rel_cover)) %>%
+    dplyr::ungroup()%>%
+    tidyr::pivot_wider(names_from = gen_sp,
+                       values_from = (rel_cover),
+                       values_fill = list(rel_cover = 0))
+
+  c_sp<- bysp%>%
+    dplyr::select(site, plotID, subplotID,year, gen_sp, cover) %>%
+    dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_"),
+                  variable = "absolute_cover") %>%
+    # the following 3 lines fix some kind of duplicate problem that happened here
+    # need to fix something upstream - jan 14 fixed it, need to test still
+    dplyr::group_by(site, plotID, subplotID,year, gen_sp, variable) %>%
+    dplyr::summarise(cover = mean(cover)) %>%
+    dplyr::ungroup()%>%
+    tidyr::pivot_wider(names_from = gen_sp,
+                       values_from = (cover),
+                       values_fill = list(cover = 0))
+
+  return(list(c_sp, rc_sp))
 }
