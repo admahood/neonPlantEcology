@@ -8,7 +8,6 @@ npe_species(
   neon_div_object,
   scale = "plot",
   trace_cover = 0.5,
-  fix_unks = FALSE,
   dissolve_years = FALSE,
   name_cleaner = FALSE
 )

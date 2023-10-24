@@ -141,18 +141,17 @@ npe_name_cleaner <- function(lf_cover){
 #' @param trace_cover cover value for subplots where only occupancy was recorded
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
 #' which is the default, or "site".
-#' @param fix_unks Should the unknown codes be altered with the "unk_fixer()"
-#' function? Defaults to false. This requires manual investigation and editing
-#' of the unk_fixer function.
+#' @param divDataType defaults to "plantSpecies", set to "otherVariables" to get 
+#' ground cover (wood, litter, scat etc)
 #' @examples
 #' # raw_div <- npe_download_plant_div(sites = "SRER")
 #' # lf_div <- npe_longform(raw_div)
 #' @export
 npe_longform <- function(neon_div_object,
-                               trace_cover=0.5,
-                               scale = "plot",
-                               dissolve_years = FALSE,
-                               fix_unks = FALSE){
+                         trace_cover=0.5,
+                         scale = "plot",
+                         divDataType = "plantSpecies",
+                         timescale = c("subannual", "annual", "all")){
   .datatable.aware <- TRUE
   requireNamespace("data.table")
   requireNamespace("dplyr")
@@ -161,263 +160,259 @@ npe_longform <- function(neon_div_object,
   requireNamespace("tidyr")
   requireNamespace("stringr")
   requireNamespace("magrittr")
-
+  
   if(scale == "plot"){
     cover <- neon_div_object$div_1m2Data %>%
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
-      dplyr::filter(divDataType == "plantSpecies") %>%
-      dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4))) %>%
+      dplyr::filter(divDataType == divDataType) %>%
       tidyr::replace_na(list(percentCover=trace_cover)) %>%
-      dplyr::group_by(plotID, subplotID, taxonID, year) %>%
-      # dealing with the multiple bout issue by first getting the max cover
-      # per sampling effort
-      dplyr::summarise(cover = max(percentCover),
-                nativeStatusCode = first(nativeStatusCode),
-                scientificName = first(scientificName),
-                family = first(family)) %>%
-      dplyr::ungroup()  %>%
       dplyr::filter(taxonID != "") %>%
-      dplyr::group_by(plotID, taxonID, year) %>%
-      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(year)<2019, 8,6),
-                nativeStatusCode = first(nativeStatusCode),
-                scientificName = first(scientificName),
-                family = first(family)) %>%
+      dplyr::group_by(plotID, taxonID, eventID) %>%
+      dplyr::summarise(cover = sum(percentCover, na.rm=TRUE)/ifelse(as.numeric(stringr::str_sub(eventID,8,11))< 2019, 8,6),
+                       nativeStatusCode = first(nativeStatusCode),
+                       scientificName = first(scientificName),
+                       family = first(family)) %>%
       dplyr::ungroup() %>%
       tibble::as_tibble()
-
+    
     traces <- neon_div_object$div_10m2Data100m2Data %>%
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(targetTaxaPresent == "Y") %>%
-      dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
-      dplyr::group_by(plotID, subplotID, taxonID, year) %>%
+      dplyr::group_by(plotID, subplotID, taxonID, eventID) %>%
       dplyr::summarise(cover = trace_cover,
-                scientificName = first(scientificName),
-                nativeStatusCode = first(nativeStatusCode),
-                family = first(family)) %>%
+                       scientificName = first(scientificName),
+                       nativeStatusCode = first(nativeStatusCode),
+                       family = first(family)) %>%
       dplyr::ungroup() %>%
       dplyr::filter(taxonID != "") %>%
-      dplyr::group_by(plotID, taxonID, year) %>%
-      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(year)<2019, 12,10),
-                nativeStatusCode = first(nativeStatusCode),
-                scientificName = first(scientificName),
-                family = first(family)) %>%
+      dplyr::group_by(plotID, taxonID, eventID) %>%
+      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(stringr::str_sub(eventID,8,11))< 2019, 8,6),
+                       nativeStatusCode = first(nativeStatusCode),
+                       scientificName = first(scientificName),
+                       family = first(family)) %>%
       dplyr::ungroup() %>%
       tibble::as_tibble()
-
+    
     full_on_cover <- dplyr::bind_rows(cover, traces) %>%
-      dplyr::group_by(plotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
+      dplyr::group_by(plotID, taxonID, eventID, nativeStatusCode, scientificName, family) %>%
       dplyr::summarise(cover = sum(cover)) %>%
       dplyr::ungroup()%>%
+      tidyr::replace_na(list(family = "Unknown")) %>%
       dplyr::mutate(site = stringr::str_sub(plotID, 1,4),
-             subplotID = "plot")
-    if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
-
-    if(dissolve_years) {
-      year_range <- unique(full_on_cover$year)%>%
+                    subplotID = "plot")
+    
+    if(timescale == "all") {
+      full_on_cover <- full_on_cover %>%
+        mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+      year_range <- unique(full_on_cover$eventID)%>%
         as.numeric %>%
         range %>%
         paste(collapse = "-")
-      n_years <- length(unique(full_on_cover$year))
+      n_years <- length(unique(full_on_cover$eventID))
       full_on_cover <- full_on_cover %>%
-        dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName, family, site, subplotID) %>%
+        dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
+                        family, site, subplotID) %>%
         dplyr::summarise(cover = sum(cover, na.rm=T)/n_years) %>%
         dplyr::ungroup() %>%
-        dplyr::mutate(year = year_range)
+        dplyr::mutate(eventID = year_range)
     }
-
+    if(timescale == "annual") {
+      full_on_cover <- full_on_cover %>%
+        mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+      full_on_cover <- full_on_cover %>%
+        dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
+                        family, site, subplotID,eventID) %>%
+        dplyr::summarise(cover = max(cover, na.rm=T)) %>%
+        dplyr::ungroup() 
+    }
     return(full_on_cover)
   }
+  
   if(scale == "site"){
     cover <- neon_div_object$div_1m2Data %>%
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
-      dplyr::filter(divDataType == "plantSpecies") %>%
-      dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
+      dplyr::filter(divDataType == divDataType) %>%
       tidyr::replace_na(list(percentCover=trace_cover)) %>%
-      dplyr::group_by(plotID, subplotID, taxonID, year) %>%
-      # dealing with the multiple bout issue by first getting the max cover
-      # per sampling effort
-      dplyr::summarise(cover = max(percentCover),
-                       nativeStatusCode = first(nativeStatusCode),
-                       scientificName = first(scientificName),
-                       family = first(family)) %>%
-      dplyr::ungroup()  %>%
       dplyr::filter(taxonID != "") %>%
-      dplyr::group_by(plotID, taxonID, year) %>%
-      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(year)<2019, 8,6),
+      dplyr::group_by(plotID, taxonID, eventID) %>%
+      dplyr::summarise(cover = sum(percentCover, na.rm=TRUE)/ifelse(as.numeric(stringr::str_sub(eventID,8,11))< 2019, 8,6),
                        nativeStatusCode = first(nativeStatusCode),
                        scientificName = first(scientificName),
                        family = first(family)) %>%
       dplyr::ungroup() %>%
       tibble::as_tibble()
-
+    
     traces <- neon_div_object$div_10m2Data100m2Data %>%
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
       dplyr::filter(targetTaxaPresent == "Y") %>%
-      dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
-      dplyr::group_by(plotID, subplotID, taxonID, year) %>%
+      dplyr::group_by(plotID, subplotID, taxonID, eventID) %>%
       dplyr::summarise(cover = trace_cover,
                        scientificName = first(scientificName),
                        nativeStatusCode = first(nativeStatusCode),
                        family = first(family)) %>%
       dplyr::ungroup() %>%
       dplyr::filter(taxonID != "") %>%
-      dplyr::group_by(plotID, taxonID, year) %>%
-      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(year)<2019, 12,10),
+      dplyr::group_by(plotID, taxonID, eventID) %>%
+      dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(stringr::str_sub(eventID,8,11))< 2019, 8,6),
                        nativeStatusCode = first(nativeStatusCode),
                        scientificName = first(scientificName),
                        family = first(family)) %>%
       dplyr::ungroup() %>%
       tibble::as_tibble()
-
+    
     n_plots <- length(unique(cover$plotID))
-
+    
     full_on_cover <- dplyr::bind_rows(cover, traces) %>%
-      dplyr::group_by(plotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
+      dtplyr::lazy_dt() %>%
+      dplyr::group_by(plotID, taxonID, eventID, nativeStatusCode, scientificName, family) %>%
       dplyr::summarise(cover = sum(cover)) %>%
       dplyr::ungroup()%>%
       dplyr::mutate(site = stringr::str_sub(plotID, 1,4)) %>%
-      dplyr::group_by(site, taxonID, year, nativeStatusCode, scientificName, family) %>%
+      dplyr::group_by(site, taxonID, eventID, nativeStatusCode, scientificName, family) %>%
       dplyr::summarise(cover = sum(cover)/n_plots) %>%
       dplyr::mutate(subplotID = "site",
-             plotID = "site") %>%
-      dplyr::ungroup()
-    if(fix_unks) full_on_cover <- full_on_cover %>%  unk_fixer()
-    if(dissolve_years) {
-      year_range <- unique(full_on_cover$year)%>%
+                    plotID = "site") %>%
+      dplyr::ungroup() %>%
+      tidyr::replace_na(list(family = "Unknown")) %>%
+      tibble::as_tibble()
+    
+    if(timescale == "all") {
+      full_on_cover <- full_on_cover %>%
+        mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+      year_range <- unique(full_on_cover$eventID)%>%
         as.numeric %>%
         range %>%
         paste(collapse = "-")
-      n_years <- length(unique(full_on_cover$year))
+      n_years <- length(unique(full_on_cover$eventID))
       full_on_cover <- full_on_cover %>%
-        dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName, family, site, subplotID) %>%
+        dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
+                        family, site, subplotID) %>%
         dplyr::summarise(cover = sum(cover, na.rm=T)/n_years) %>%
         dplyr::ungroup() %>%
-        dplyr::mutate(year = year_range)
+        dplyr::mutate(eventID = year_range)
+    }
+    if(timescale == "annual") {
+      full_on_cover <- full_on_cover %>%
+        mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+      full_on_cover <- full_on_cover %>%
+        dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
+                        family, site, subplotID,eventID) %>%
+        dplyr::summarise(cover = max(cover, na.rm=T)) %>%
+        dplyr::ungroup() 
     }
     return(full_on_cover)
   }
-
+  
+  # cover 8 ===========
   cover8 <- neon_div_object$div_1m2Data %>%
     dtplyr::lazy_dt() %>%
-    dplyr::mutate(endDate = as.Date(endDate)) %>%
-    dplyr::filter(divDataType == "plantSpecies") %>%
-    dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
-    # entries in the df with no values but species was there
-    # i.e. someone put the sp. code and forgot to fill in the number
-    # putting as trace cover value
+    dplyr::filter(divDataType == divDataType) %>%
     tidyr::replace_na(list(percentCover=trace_cover)) %>%
-    dplyr::mutate(endDate = as.Date(endDate)) %>%
-    dplyr::filter(divDataType == "plantSpecies") %>%
-    dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
-    dplyr::group_by(plotID, subplotID, taxonID, year) %>%
-    # dealing with the multiple bout issue by first getting the mean cover
-    # per sampling effort, without aggregating, then later we'll aggregate.
-    # that way, a fall-bloomer that isn't visible in spring, for example,
-    # will be given its full cover value for fall, but then a species
-    # that is there for both seasons will be averaged, if that makes sense
-    dplyr::summarise(cover = max(percentCover),
-              nativeStatusCode = first(nativeStatusCode),
-              scientificName = first(scientificName),
-              family = first(family)) %>%
-    dplyr::ungroup()  %>%
+    dplyr::select(plotID, subplotID, taxonID, eventID, cover = percentCover,
+                  nativeStatusCode, scientificName, family) %>%
     dplyr::filter(taxonID != "") %>%
     dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) %>%
+    tidyr::replace_na(list(family = "Unknown")) %>%
     tibble::as_tibble()
-
-
+  
+  
   # 10m2,100m2 are given 0.5 (we can change later)
   # unique(x$div_10m2Data100m2Data$subplotID) # there are 12 subplots
-
-  traces8 <- neon_div_object$div_10m2Data100m2Data %>%
+  
+  # traces8 (10m2) ==============
+  traces8 <- neon_div_object$div_10m2Data100m2Data %>% 
     dtplyr::lazy_dt() %>%
-    dplyr::mutate(endDate = as.Date(endDate)) %>%
-    dplyr::filter(targetTaxaPresent == "Y") %>%
-    dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
-    dplyr::group_by(plotID, subplotID, taxonID, year) %>%
-    dplyr::summarise(cover = trace_cover,
-              scientificName = first(scientificName),
-              nativeStatusCode = first(nativeStatusCode),
-              family = first(family)) %>%
+    # dplyr::filter(targetTaxaPresent == "Y") %>%
+    dplyr::group_by(plotID, subplotID, taxonID, eventID, scientificName,
+                    nativeStatusCode, family) %>%
+    dplyr::summarise(cover = trace_cover) %>%
     dplyr::ungroup() %>%
     dplyr::filter(taxonID != "",
-           subplotID != "31", # these are the 100m2 subplots under which two 1m2 and 10m2 pairs are nested
-           subplotID != "32",
-           subplotID != "40",
-           subplotID != "41")  %>%
+                  subplotID != "31", # these are the 100m2 subplots under which two 1m2 and 10m2 pairs are nested
+                  subplotID != "32",
+                  subplotID != "40",
+                  subplotID != "41")  %>%
     dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) %>%
+    tidyr::replace_na(list(family = "Unknown")) %>%
     tibble::as_tibble()
-
+  
+  # traces100s ========
   traces100s <- neon_div_object$div_10m2Data100m2Data %>%
     dtplyr::lazy_dt() %>%
-    dplyr::mutate(endDate = as.Date(endDate)) %>%
     dplyr::filter(targetTaxaPresent == "Y") %>%
-    dplyr::mutate(year = stringr::str_c(stringr::str_sub(endDate,1,4)))%>%
-    dplyr::group_by(plotID, subplotID, taxonID, year) %>%
-    dplyr::summarise(cover = trace_cover,
-              scientificName = first(scientificName),
-              nativeStatusCode = first(nativeStatusCode),
-              family = first(family)) %>%
+    dplyr::group_by(plotID, subplotID, taxonID, eventID, scientificName,
+                    nativeStatusCode, family) %>%
+    dplyr::summarise(cover = trace_cover) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(site = stringr::str_sub(plotID, 1,4)) %>%
     dplyr::filter(taxonID != "",
-           subplotID == "31"| # these are the 100m2 subplots under which two 1m2 and 10m2 pairs are nested
-             subplotID == "32"|
-             subplotID == "40"|
-             subplotID == "41") %>%
+                  subplotID == "31"| # these are the 100m2 subplots under which two 1m2 and 10m2 pairs are nested
+                    subplotID == "32"|
+                    subplotID == "40"|
+                    subplotID == "41") %>%
+    tidyr::replace_na(list(family = "Unknown")) %>%
     tibble::as_tibble()
-
-  # aggregating at different scales ----------------------------------------------
+  
+  # aggregating at different spatial scales ------------------------------------
   cover8_1m2 <- cover8 %>%
-    dplyr::group_by(plotID, subplotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
+    dplyr::group_by(plotID, subplotID, taxonID, eventID, nativeStatusCode, scientificName, family) %>%
     dplyr::summarise(cover = sum(cover)) %>%
     dplyr::ungroup()%>%
     dplyr::mutate(site = stringr::str_sub(plotID, 1,4))
-  if(fix_unks) cover8_1m2 <- unk_fixer(cover8_1m2)
 
   cover8_1m2_10m2 <- dplyr::bind_rows(cover8, traces8) %>%
-    dplyr::group_by(plotID,subplotID, taxonID, year, nativeStatusCode, scientificName, family) %>%
+    dplyr::group_by(plotID,subplotID, taxonID, eventID, nativeStatusCode, scientificName, family) %>%
     dplyr::summarise(cover = sum(cover)) %>%
     dplyr::ungroup()%>%
     dplyr::mutate(site = stringr::str_sub(plotID, 1,4))
-  if(fix_unks) cover8_1m2_10m2<-cover8_1m2_10m2 %>%  unk_fixer()
 
   cover4 <- cover8_1m2_10m2 %>%
     dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1,2)) %>%
     dplyr::bind_rows(traces100s) %>% # adding in the 100m2 subplots
-    dplyr::group_by(plotID, subplotID, year, taxonID) %>%
+    dplyr::group_by(plotID, subplotID, eventID, taxonID) %>%
     dplyr::summarise(cover = sum(cover), # this is summing together repeats from the rbinding
-              scientificName = first(scientificName),
-              nativeStatusCode = first(nativeStatusCode),
-              family = first(family),
-              site = first(site)) %>%
+                     scientificName = first(scientificName),
+                     nativeStatusCode = first(nativeStatusCode),
+                     family = first(family),
+                     site = first(site)) %>%
     dplyr::ungroup()
-  if(fix_unks) cover4 <- cover4 %>%  unk_fixer()
 
-
+  
   if(scale == "1m") full_on_cover <- cover8_1m2
   if(scale == "10m") full_on_cover <- cover8_1m2_10m2
   if(scale == "100m") full_on_cover <- cover4
-
-  if(dissolve_years) {
-    year_range <- unique(full_on_cover$year)%>%
+  
+  if(timescale == "all") {
+    full_on_cover <- full_on_cover %>%
+      mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+    year_range <- unique(full_on_cover$eventID)%>%
       as.numeric %>%
       range %>%
       paste(collapse = "-")
-    n_years <- length(unique(full_on_cover$year))
+    n_years <- length(unique(full_on_cover$eventID))
     full_on_cover <- full_on_cover %>%
-      dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName, family, site, subplotID) %>%
+      dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
+                      family, site, subplotID) %>%
       dplyr::summarise(cover = sum(cover, na.rm=T)/n_years) %>%
       dplyr::ungroup() %>%
-      dplyr::mutate(year = year_range)
+      dplyr::mutate(eventID = year_range)
   }
-
+  if(timescale == "annual") {
+    full_on_cover <- full_on_cover %>%
+      mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+    full_on_cover <- full_on_cover %>%
+      dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
+                      family, site, subplotID,eventID) %>%
+      dplyr::summarise(cover = max(cover, na.rm=T)) %>%
+      dplyr::ungroup() 
+  }
+  
   return(full_on_cover)
 }
-
 #' Create a species abundance or occurrence matrix
 #'
 #' npe_community_matrix creates a wide matrix of species cover or binary (presence/absence)
@@ -430,26 +425,33 @@ npe_longform <- function(neon_div_object,
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m", or "plot",
 #' which is the default.
 #' @param trace_cover cover value for subplots where only occupancy was recorded
-#' @param fix_unks Should the unknown codes be altered with the "unk_fixer()"
-#' function? Defaults to false. This requires manual investigation and editing
-#' of the unk_fixer function.
 #' @param binary should the matrix be converted from percent cover to binary?
+#' @param input by default, longform dataframe is calculated from the diversity
+#' object and then converted to a community matrix, set this option to something
+#' else input a longform data frame that was created (and perhaps modified)
+#' separately
 #' @export
-npe_community_matrix <- function(neon_div_object,
-                   scale="plot",
+npe_community_matrix <- function(x,
+                   scale = "plot",
                    trace_cover = 0.5,
-                   fix_unks = FALSE,
+                   timescale = "annual",
+                   input = "neon_div_object",
                    binary=FALSE) {
   requireNamespace("tidyr")
   requireNamespace("dplyr")
   requireNamespace("tibble")
   requireNamespace("magrittr")
-
+  
+  if(input == "neon_div_object"){
+    longform_df <- x %>%
+     npe_longform(scale = scale, trace_cover = trace_cover, 
+                  timescale = timescale) 
+  }else{longform_df <- x}
+  
   if(!binary){
     return(
-      neon_div_object %>%
-        npe_longform(scale = scale, trace_cover = trace_cover, fix_unks = FALSE) %>%
-        dplyr::mutate(p_sp_y = paste(plotID, subplotID, year, sep = "_")) %>%
+      longform_df %>%
+        dplyr::mutate(p_sp_y = paste(plotID, subplotID, eventID, sep = "_")) %>%
         dplyr::select(p_sp_y, taxonID, cover) %>%
         na.omit() %>% # not sure how, but there are some NA's where they shouldn't be
         tidyr::pivot_wider(id_cols = p_sp_y,
@@ -460,9 +462,8 @@ npe_community_matrix <- function(neon_div_object,
         as.data.frame()
     )
   }else{
-      bin<-neon_div_object %>%
-        npe_longform(scale = scale, trace_cover = trace_cover, fix_unks = FALSE) %>%
-        dplyr::mutate(p_sp_y = paste(plotID, subplotID, year, sep = "_")) %>%
+      bin <- longform_df %>%
+        dplyr::mutate(p_sp_y = paste(plotID, subplotID, eventID, sep = "_")) %>%
         dplyr::select(p_sp_y, taxonID, cover) %>%
         na.omit() %>% # not sure how, but there are some NA's where they shouldn't be
         tidyr::pivot_wider(id_cols = p_sp_y,
@@ -492,12 +493,9 @@ npe_community_matrix <- function(neon_div_object,
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
 #' which is the default, or "site".
 #' @param trace_cover cover value for subplots where only occupancy was recorded
-#' @param fix_unks Should the unknown codes be altered with the "unk_fixer()"
-#' function? Defaults to false. This requires manual investigation and editing
-#' of the unk_fixer function.
-#' @param dissolve_years by default npe_diversity_info groups everything by year.
-#' The user may set this argument to true to have the function aggregate the years
-#' together and then calculate diversity and cover indexes.
+#' @param timescale by default npe_diversity_info groups everything by year.
+#' The user may set this argument to "all" to have the function aggregate the years
+#' together and then calculate diversity and cover indexes, or "subannual" for bout-level.
 #' @param betadiversity If evaluating at the plot or site level, should beta
 #' diversity (turnover and nestedness) be calculated. If scale = plot, it will
 #' calculate betadiversity within each plot, using the combined species
@@ -515,8 +513,7 @@ npe_community_matrix <- function(neon_div_object,
 npe_diversity_info <- function(neon_div_object,
                                scale = "plot",
                                trace_cover = 0.5,
-                               fix_unks = FALSE,
-                               dissolve_years = FALSE,
+                               timescale = "annual",
                                betadiversity = FALSE,
                                name_cleaner = FALSE,
                                families = NA,
@@ -529,39 +526,36 @@ npe_diversity_info <- function(neon_div_object,
 
   full_on_cover <- npe_longform(neon_div_object,
                                       scale = scale,
-                                      dissolve_years = dissolve_years,
-                                      fix_unks = fix_unks)
-  if(name_cleaner) full_on_cover <- name_cleaner(full_on_cover)
-
+                                      trace_cover = trace_cover,
+                                      timescale = timescale)
   template <- full_on_cover %>%
-    dplyr::select(site, plotID, subplotID, year)
+    dplyr::select(site, plotID, subplotID, eventID)
 
   # Betadiversity ===================
   if(betadiversity == TRUE & scale == "plot"){
 
      ten_m <- npe_longform(neon_div_object,
-                                 scale = "10m",
-                                 dissolve_years = dissolve_years,
-                                 fix_unks = fix_unks) %>%
-      dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
+                           scale = "10m",
+                           timescale = timescale) %>%
+      dplyr::group_by(site, plotID, subplotID,taxonID, eventID) %>%
       dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
-      dplyr::group_by(site, plotID, subplotID, year) %>%
+      dplyr::group_by(site, plotID, subplotID, eventID) %>%
       tidyr::spread(taxonID, cover, fill=0) %>%
       dplyr::ungroup() %>%
       dplyr::select(-subplotID)
 
-     bd<- data.frame(turnover = NA, nestedness = NA, year = NA, plotID = NA, site = NA, subplotID = NA)
+     bd<- data.frame(turnover = NA, nestedness = NA, eventID = NA, plotID = NA, site = NA, subplotID = NA)
 
      counter <- 1
-     for(i in unique(ten_m$year)){
+     for(i in unique(ten_m$eventID)){
        for(j in unique(ten_m$plotID)){
 
          if(nrow(ten_m %>%
-                 dplyr::filter(year == i, plotID == j))>0){
+                 dplyr::filter(eventID == i, plotID == j))>0){
           out <- ten_m %>%
-           dplyr::filter(year == i, plotID == j) %>%
-           dplyr::select(-year, -site, -plotID) %>%
+           dplyr::filter(eventID == i, plotID == j) %>%
+           dplyr::select(-eventID, -site, -plotID) %>%
            vegan::nestedbetajac()
 
           bd[counter, 1] <- out[1] %>% unname
@@ -582,27 +576,26 @@ npe_diversity_info <- function(neon_div_object,
 
     plot_scale <- npe_longform(neon_div_object,
                                 scale = "plot",
-                                dissolve_years = dissolve_years,
-                                fix_unks = fix_unks) %>%
-      dplyr::group_by(site, plotID,taxonID, year) %>%
+                                timescale = timescale) %>%
+      dplyr::group_by(site, plotID,taxonID, eventID) %>%
       dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
-      dplyr::group_by(site, plotID, year) %>%
+      dplyr::group_by(site, plotID, eventID) %>%
       tidyr::spread(taxonID, cover, fill=0) %>%
       dplyr::ungroup() %>%
       dplyr::select(-plotID)
 
-    bd<- data.frame(turnover = NA, nestedness = NA, year = NA, site = NA, plotID = NA, subplotID = NA)
+    bd<- data.frame(turnover = NA, nestedness = NA, eventID = NA, site = NA, plotID = NA, subplotID = NA)
 
     counter <- 1
-    for(i in unique(plot_scale$year)){
+    for(i in unique(plot_scale$eventID)){
       for(j in unique(plot_scale$site)){
 
         if(nrow(plot_scale %>%
-                dplyr::filter(year == i, site == j))>0){
+                dplyr::filter(eventID == i, site == j))>0){
           out <- plot_scale %>%
-            dplyr::filter(year == i, site == j) %>%
-            dplyr::select(-year, -site) %>%
+            dplyr::filter(eventID == i, site == j) %>%
+            dplyr::select(-eventID, -site) %>%
             vegan::nestedbetajac()
 
           bd[counter, 1] <- out[1] %>% unname
@@ -622,10 +615,10 @@ npe_diversity_info <- function(neon_div_object,
 
   n_i <- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("I", "N", "UNK")) %>%
-    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID) %>%
     dplyr::mutate(total_cover = sum(cover))%>%
     dplyr::ungroup() %>%
-    dplyr::group_by(site, plotID, subplotID,year, nativeStatusCode) %>%
+    dplyr::group_by(site, plotID, subplotID,eventID, nativeStatusCode) %>%
     dplyr::summarise(cover = sum(cover),
               total_cover = first(total_cover)) %>%
     dplyr::ungroup() %>%
@@ -636,19 +629,19 @@ npe_diversity_info <- function(neon_div_object,
   names(lut_nsc) <-  c("N", "I", "UNK")
 
   n_i_cover <- n_i %>%
-    dplyr::select(site, plotID, subplotID,year, nativeStatusCode, cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, nativeStatusCode, cover) %>%
     dplyr::mutate(nativeStatusCode = lut_nsc[nativeStatusCode]) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                 values_from = cover,
                 values_fill = list(cover = 0))
 
   n_i_rel_cover <- n_i %>%
-    dplyr::select(site, plotID, subplotID,year, nativeStatusCode, rel_cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, nativeStatusCode, rel_cover) %>%
     dplyr::mutate(nativeStatusCode = lut_nsc[nativeStatusCode] %>% stringr::str_c("rel_",.)) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                 values_from = rel_cover,
                 values_fill = list(rel_cover = 0))%>%
-    dplyr::left_join(n_i_cover, by = c("site", "plotID", "subplotID","year"))
+    dplyr::left_join(n_i_cover, by = c("site", "plotID", "subplotID","eventID"))
 
   if(sum(names(n_i_rel_cover) %in% "cover_exotic")==0){
     n_i_rel_cover <- n_i_rel_cover %>%
@@ -659,10 +652,10 @@ npe_diversity_info <- function(neon_div_object,
   # not exotic cover ===================================================
   n_e <- full_on_cover %>%
     dplyr::mutate(nativeStatusCode = ifelse(nativeStatusCode !="I", "NE", "I")) %>%
-    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID) %>%
     dplyr::mutate(total_cover = sum(cover))%>%
     dplyr::ungroup() %>%
-    dplyr::group_by(site, plotID, subplotID,year, nativeStatusCode) %>%
+    dplyr::group_by(site, plotID, subplotID,eventID, nativeStatusCode) %>%
     dplyr::summarise(cover = sum(cover),
                      total_cover = first(total_cover)) %>%
     dplyr::ungroup() %>%
@@ -673,7 +666,7 @@ npe_diversity_info <- function(neon_div_object,
   names(lut_ne) <-  c("NE", "I")
 
   n_e_cover <- n_e %>%
-    dplyr::select(site, plotID, subplotID,year, nativeStatusCode, cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, nativeStatusCode, cover) %>%
     dplyr::mutate(nativeStatusCode = lut_ne[nativeStatusCode]) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                        values_from = cover,
@@ -681,13 +674,13 @@ npe_diversity_info <- function(neon_div_object,
     dplyr::select(-contains("cover_exotic"))
 
   n_e_rel_cover <- n_e %>%
-    dplyr::select(site, plotID, subplotID,year, nativeStatusCode, rel_cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, nativeStatusCode, rel_cover) %>%
     dplyr::mutate(nativeStatusCode = lut_ne[nativeStatusCode] %>% stringr::str_c("rel_",.)) %>%
     tidyr::pivot_wider(names_from = nativeStatusCode,
                        values_from = rel_cover,
                        values_fill = list(rel_cover = 0))%>%
     dplyr::select(-contains("rel_cover_exotic")) %>%
-    dplyr::left_join(n_e_cover, by = c("site", "plotID", "subplotID","year"))
+    dplyr::left_join(n_e_cover, by = c("site", "plotID", "subplotID","eventID"))
 
 
 
@@ -695,10 +688,10 @@ npe_diversity_info <- function(neon_div_object,
   if(!is.na(families)){
 
     byfam <- full_on_cover%>%
-      dplyr::group_by(site, plotID, subplotID, year) %>%
+      dplyr::group_by(site, plotID, subplotID, eventID) %>%
       dplyr::mutate(total_cover = sum(cover))%>%
       dplyr::ungroup() %>%
-      dplyr::group_by(site, plotID, subplotID,year, family) %>%
+      dplyr::group_by(site, plotID, subplotID,eventID, family) %>%
       dplyr::summarise(cover = sum(cover),
                 total_cover = first(total_cover)) %>%
       dplyr::ungroup() %>%
@@ -707,14 +700,14 @@ npe_diversity_info <- function(neon_div_object,
       dplyr::filter(family %in% families)
 
     rcf<- byfam%>%
-      dplyr::select(site, plotID, subplotID,year, family, rel_cover) %>%
+      dplyr::select(site, plotID, subplotID,eventID, family, rel_cover) %>%
       tidyr::pivot_wider(names_from = family,
                   names_prefix = "rel_cover_",
                   values_from = (rel_cover),
                   values_fill = list(rel_cover = 0))
 
     cf<- byfam%>%
-      dplyr::select(site, plotID, subplotID,year, family, cover) %>%
+      dplyr::select(site, plotID, subplotID,eventID, family, cover) %>%
       tidyr::pivot_wider(names_from = family,
                   names_prefix = "cover_",
                   values_from = (cover),
@@ -722,10 +715,10 @@ npe_diversity_info <- function(neon_div_object,
 
     nspp_byfam <- full_on_cover%>%
       dplyr::filter(nativeStatusCode %in% c("I", "N", "UNK")) %>%
-      dplyr::group_by(site, plotID, subplotID, year) %>%
+      dplyr::group_by(site, plotID, subplotID, eventID) %>%
       dplyr::mutate(total_cover = sum(cover))%>%
       dplyr::ungroup() %>%
-      dplyr::group_by(site, plotID, subplotID,year, family, nativeStatusCode) %>%
+      dplyr::group_by(site, plotID, subplotID,eventID, family, nativeStatusCode) %>%
       dplyr::summarise(nspp = length(unique(scientificName))) %>%
       dplyr::ungroup() %>%
       dplyr::filter(family %in% families) %>%
@@ -738,10 +731,10 @@ npe_diversity_info <- function(neon_div_object,
   # Cover by species ===========================================================
   if(!is.na(spp)){
     bysp <- full_on_cover%>%
-      dplyr::group_by(site, plotID, subplotID, year) %>%
+      dplyr::group_by(site, plotID, subplotID, eventID) %>%
       dplyr::mutate(total_cover = sum(cover))%>%
       dplyr::ungroup() %>%
-      dplyr::group_by(site, plotID, subplotID, year, scientificName) %>%
+      dplyr::group_by(site, plotID, subplotID, eventID, scientificName) %>%
       dplyr::summarise(cover = sum(cover),
                 total_cover = first(total_cover)) %>%
       dplyr::ungroup() %>%
@@ -764,11 +757,11 @@ npe_diversity_info <- function(neon_div_object,
       dplyr::filter(gen_sp %in% spp)
 
     rc_sp <- bysp%>%
-      dplyr::select(site, plotID, subplotID,year, gen_sp, rel_cover) %>%
+      dplyr::select(site, plotID, subplotID,eventID, gen_sp, rel_cover) %>%
       dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_")) %>%
       # the following 3 lines fix some kind of duplicate problem that happened here
       # need to fix something upstream - jan 14 fixed it, need to test still
-      dplyr::group_by(site, plotID, subplotID,year, gen_sp) %>%
+      dplyr::group_by(site, plotID, subplotID,eventID, gen_sp) %>%
       dplyr::summarise(rel_cover = mean(rel_cover)) %>%
       dplyr::ungroup()%>%
       tidyr::pivot_wider(names_from = gen_sp,
@@ -777,11 +770,11 @@ npe_diversity_info <- function(neon_div_object,
                   values_fill = list(rel_cover = 0))
 
     c_sp<- bysp%>%
-      dplyr::select(site, plotID, subplotID,year, gen_sp, cover) %>%
+      dplyr::select(site, plotID, subplotID,eventID, gen_sp, cover) %>%
       dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_")) %>%
       # the following 3 lines fix some kind of duplicate problem that happened here
       # need to fix something upstream - jan 14 fixed it, need to test still
-      dplyr::group_by(site, plotID, subplotID,year, gen_sp) %>%
+      dplyr::group_by(site, plotID, subplotID,eventID, gen_sp) %>%
       dplyr::summarise(cover = mean(cover)) %>%
       dplyr::ungroup()%>%
       tidyr::pivot_wider(names_from = gen_sp,
@@ -793,10 +786,10 @@ npe_diversity_info <- function(neon_div_object,
   if(!is.na(families)){
   family_stuff <- full_on_cover%>%
     dplyr::filter(nativeStatusCode %in% c("I", "N", "UNK")) %>%
-    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID) %>%
     dplyr::mutate(total_cover = sum(cover))%>%
     dplyr::ungroup() %>%
-    dplyr::group_by(site, plotID, subplotID,year, family, nativeStatusCode) %>%
+    dplyr::group_by(site, plotID, subplotID,eventID, family, nativeStatusCode) %>%
     dplyr::summarise(cover = sum(cover),
               total_cover = first(total_cover)) %>%
     dplyr::ungroup() %>%
@@ -805,7 +798,7 @@ npe_diversity_info <- function(neon_div_object,
     dplyr::filter(family %in% families)
 
   rc_ig<- family_stuff%>%
-    dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,rel_cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, family, nativeStatusCode,rel_cover) %>%
     dplyr::filter(nativeStatusCode == "I") %>%
     tidyr::pivot_wider(names_from = family,
                 names_prefix = "rc_exotic_",
@@ -814,7 +807,7 @@ npe_diversity_info <- function(neon_div_object,
     dplyr::select(-nativeStatusCode)
 
   rc_neg<- family_stuff%>%
-    dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,rel_cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, family, nativeStatusCode,rel_cover) %>%
     dplyr::filter(nativeStatusCode != "I") %>%
     tidyr::pivot_wider(names_from = family,
                        names_prefix = "rc_notexotic_",
@@ -823,7 +816,7 @@ npe_diversity_info <- function(neon_div_object,
     dplyr::select(-nativeStatusCode)
 
   rc_ng<- family_stuff%>%
-    dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,rel_cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, family, nativeStatusCode,rel_cover) %>%
     dplyr::filter(nativeStatusCode == "N") %>%
     tidyr::pivot_wider(names_from = family,
                 names_prefix = "rc_native_",
@@ -832,7 +825,7 @@ npe_diversity_info <- function(neon_div_object,
     dplyr::select(-nativeStatusCode)
 
   c_ig<- family_stuff%>%
-    dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, family, nativeStatusCode,cover) %>%
     dplyr::filter(nativeStatusCode == "I") %>%
     tidyr::pivot_wider(names_from = family,
                 names_prefix = "cover_exotic_",
@@ -840,7 +833,7 @@ npe_diversity_info <- function(neon_div_object,
                 values_fill = list(cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
   c_neg<- family_stuff%>%
-    dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, family, nativeStatusCode,cover) %>%
     dplyr::filter(nativeStatusCode != "I") %>%
     tidyr::pivot_wider(names_from = family,
                        names_prefix = "cover_notexotic_",
@@ -848,7 +841,7 @@ npe_diversity_info <- function(neon_div_object,
                        values_fill = list(cover = 0)) %>%
     dplyr::select(-nativeStatusCode)
   c_ng<- family_stuff%>%
-    dplyr::select(site, plotID, subplotID,year, family, nativeStatusCode,cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, family, nativeStatusCode,cover) %>%
     dplyr::filter(nativeStatusCode == "N") %>%
     tidyr::pivot_wider(names_from = family,
                 names_prefix = "cover_native_",
@@ -860,27 +853,27 @@ npe_diversity_info <- function(neon_div_object,
   if(nrow(dplyr::filter(full_on_cover,nativeStatusCode=="I"))>0){
   vegan_friendly_div_ex <- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("I")) %>%
-    dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
+    dplyr::group_by(site, plotID, subplotID,taxonID, eventID) %>%
     dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
     dplyr::ungroup() %>%
-    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID) %>%
     tidyr::spread(taxonID, cover, fill=0) %>%
     dplyr::ungroup()
 
   nspp_ex <- vegan_friendly_div_ex %>%
-    dplyr::select(site, plotID, subplotID,year) %>%
+    dplyr::select(site, plotID, subplotID,eventID) %>%
     dplyr::mutate(shannon_exotic = vegan::diversity(vegan_friendly_div_ex %>%
                                         dplyr::select(-site,
                                                       -plotID,
                                                       -subplotID,
-                                                      -year)),
+                                                      -eventID)),
            evenness_exotic = shannon_exotic/vegan::specnumber(vegan_friendly_div_ex%>%
-                                                                  dplyr::select(-site, -plotID, -subplotID, -year)),
+                                                                  dplyr::select(-site, -plotID, -subplotID, -eventID)),
            nspp_exotic = vegan::specnumber(vegan_friendly_div_ex %>%
                                       dplyr::select(-site,
                                                     -plotID,
                                                     -subplotID,
-                                                    -year)))}else{
+                                                    -eventID)))}else{
                                                       nspp_ex<-
                                                         template %>%
                                                         dplyr::mutate(shannon_exotic = 0,
@@ -891,153 +884,153 @@ npe_diversity_info <- function(neon_div_object,
   # native diversity and evenness ===========
   vegan_friendly_div_n<- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("N")) %>%
-    dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
+    dplyr::group_by(site, plotID, subplotID,taxonID, eventID) %>%
     dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(taxonID = as.character(taxonID),
                   plotID = as.character(plotID)) %>%
-    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID) %>%
     tidyr::spread(taxonID, cover, fill=0) %>%
     dplyr::ungroup()
 
   nspp_n <- vegan_friendly_div_n %>%
-    dplyr::select(site, plotID, subplotID,year) %>%
+    dplyr::select(site, plotID, subplotID,eventID) %>%
     dplyr::mutate(shannon_native = vegan::diversity(vegan_friendly_div_n %>%
                                                dplyr::select(-site,
                                                              -plotID,
                                                              -subplotID,
-                                                             -year)),
+                                                             -eventID)),
            evenness_native = shannon_native/vegan::specnumber(vegan_friendly_div_n%>%
-                                                                  dplyr::select(-site, -plotID, -subplotID, -year)),
+                                                                  dplyr::select(-site, -plotID, -subplotID, -eventID)),
            nspp_native = vegan::specnumber(vegan_friendly_div_n %>%
                                              dplyr::select(-site,
                                                            -plotID,
                                                            -subplotID,
-                                                           -year)))
+                                                           -eventID)))
 
 
   # unknown diversity and evenness  ========================
   vegan_friendly_div_un<- full_on_cover %>%
     dplyr::filter(nativeStatusCode %in% c("UNK")) %>%
-    dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
+    dplyr::group_by(site, plotID, subplotID,taxonID, eventID) %>%
     dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(taxonID = as.character(taxonID),
                   plotID = as.character(plotID)) %>%
-    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID) %>%
     tidyr::spread(taxonID, cover, fill=0) %>%
     dplyr::ungroup()
 
   nspp_un <- vegan_friendly_div_un %>%
-    dplyr::select(site, plotID, subplotID,year) %>%
+    dplyr::select(site, plotID, subplotID,eventID) %>%
     dplyr::mutate(shannon_unknown = vegan::diversity(vegan_friendly_div_un %>%
                                                dplyr::select(-site,
                                                              -plotID,
                                                              -subplotID,
-                                                             -year)),
+                                                             -eventID)),
            evenness_unknown = shannon_unknown/vegan::specnumber(vegan_friendly_div_un%>%
-                                                              dplyr::select(-site, -plotID, -subplotID, -year)),
+                                                              dplyr::select(-site, -plotID, -subplotID, -eventID)),
            nspp_unknown = vegan::specnumber(vegan_friendly_div_un %>%
                                              dplyr::select(-site,
                                                            -plotID,
                                                            -subplotID,
-                                                           -year)))
+                                                           -eventID)))
   # not exotic diversity and evenness  ====================
   vegan_friendly_div_nex <- full_on_cover %>%
     dplyr::filter(nativeStatusCode != c("I")) %>%
-    dplyr::group_by(site, plotID, subplotID,taxonID, year) %>%
+    dplyr::group_by(site, plotID, subplotID,taxonID, eventID) %>%
     dplyr::summarise(cover = sum(cover, na.rm = TRUE)) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(taxonID = as.character(taxonID),
                   plotID = as.character(plotID)) %>%
-    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID) %>%
     tidyr::spread(taxonID, cover, fill=0) %>%
     dplyr::ungroup()
 
   nspp_nex <- vegan_friendly_div_nex %>%
-    dplyr::select(site, plotID, subplotID,year) %>%
+    dplyr::select(site, plotID, subplotID,eventID) %>%
     dplyr::mutate(shannon_notexotic = vegan::diversity(vegan_friendly_div_nex %>%
                                                 dplyr::select(-site,
                                                               -plotID,
                                                               -subplotID,
-                                                              -year)),
+                                                              -eventID)),
            evenness_notexotic = shannon_notexotic/vegan::specnumber(vegan_friendly_div_nex%>%
-                                                                  dplyr::select(-site, -plotID, -subplotID, -year)),
+                                                                  dplyr::select(-site, -plotID, -subplotID, -eventID)),
            nspp_notexotic = vegan::specnumber(vegan_friendly_div_nex %>%
                                               dplyr::select(-site,
                                                             -plotID,
                                                             -subplotID,
-                                                            -year)))
+                                                            -eventID)))
 
   # total vegan::diversity - not splitting between native status =========
   vegan_friendly_div_total <- full_on_cover %>%
-    dplyr::group_by(site, plotID, subplotID, taxonID, year) %>%
+    dplyr::group_by(site, plotID, subplotID, taxonID, eventID) %>%
     dplyr::summarise(cover = sum(cover)) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(taxonID = as.character(taxonID),
            plotID = as.character(plotID)) %>%
     dplyr::filter(nchar(as.character(taxonID))>0) %>%
-    dplyr::group_by(site, plotID, subplotID,year) %>%
+    dplyr::group_by(site, plotID, subplotID,eventID) %>%
     tidyr::spread(taxonID, cover, fill=0) %>%
     dplyr::ungroup()
 
-  div_total <- dplyr::select(vegan_friendly_div_total, site, plotID, subplotID,year) %>%
+  div_total <- dplyr::select(vegan_friendly_div_total, site, plotID, subplotID,eventID) %>%
     dplyr::mutate(shannon_total = vegan::diversity(vegan_friendly_div_total%>%
-                                               dplyr::select(-site, -plotID, -subplotID, -year)),
+                                               dplyr::select(-site, -plotID, -subplotID, -eventID)),
            evenness_total = shannon_total/vegan::specnumber(vegan_friendly_div_total%>%
-                                                                dplyr::select(-site, -plotID, -subplotID, -year)),
+                                                                dplyr::select(-site, -plotID, -subplotID, -eventID)),
            nspp_total = vegan::specnumber(vegan_friendly_div_total%>%
-                                             dplyr::select(-site, -plotID, -subplotID, -year)))
+                                             dplyr::select(-site, -plotID, -subplotID, -eventID)))
 
   # family diversity ===========================================================
   vegan_friendly_div_total_f <- full_on_cover %>%
     dplyr::filter(!is.na(family)) %>%
-    dplyr::group_by(site, plotID, subplotID, family, year) %>%
+    dplyr::group_by(site, plotID, subplotID, family, eventID) %>%
     dplyr::summarise(cover = sum(cover)) %>%
     dplyr::ungroup() %>%
-    dplyr::group_by(site, plotID, subplotID,year) %>%
+    dplyr::group_by(site, plotID, subplotID,eventID) %>%
     tidyr::spread(family, cover, fill=0) %>%
     dplyr::ungroup()
 
-  div_total_f <- dplyr::select(vegan_friendly_div_total_f, site, plotID, subplotID,year) %>%
+  div_total_f <- dplyr::select(vegan_friendly_div_total_f, site, plotID, subplotID,eventID) %>%
     dplyr::mutate(shannon_family = vegan::diversity(vegan_friendly_div_total_f%>%
-                                              dplyr::select(-site, -plotID, -subplotID, -year)),
+                                              dplyr::select(-site, -plotID, -subplotID, -eventID)),
            evenness_family = shannon_family/vegan::specnumber(vegan_friendly_div_total_f%>%
-                                               dplyr::select(-site, -plotID, -subplotID, -year)),
+                                               dplyr::select(-site, -plotID, -subplotID, -eventID)),
            nfamilies = vegan::specnumber(vegan_friendly_div_total_f%>%
-                                            dplyr::select(-site, -plotID, -subplotID, -year)))
+                                            dplyr::select(-site, -plotID, -subplotID, -eventID)))
 
   # joining and writing out ------------------------------------------------------
   final_table <- template %>%
-    dplyr::left_join(nspp_ex, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(nspp_nex, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(nspp_n, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(nspp_un, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(n_i_rel_cover, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(n_e_rel_cover, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(div_total, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(div_total_f, by = c("site", "plotID", "subplotID", "year")) %>%
+    dplyr::left_join(nspp_ex, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(nspp_nex, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(nspp_n, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(nspp_un, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(n_i_rel_cover, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(n_e_rel_cover, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(div_total, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(div_total_f, by = c("site", "plotID", "subplotID", "eventID")) %>%
     dplyr::mutate(scale = scale,
                   invaded = ifelse(cover_exotic > 0, "invaded", "not_invaded"))
   if(exists("bd")){
     final_table <- final_table %>%
-      dplyr::left_join(bd, by = c("site", "plotID", "subplotID", "year"))
+      dplyr::left_join(bd, by = c("site", "plotID", "subplotID", "eventID"))
   }
   if(!is.na(families)){
     final_table <- final_table %>%
-    dplyr::left_join(rcf, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(rc_ig, by = c("site", "plotID", "subplotID", "year"))%>%
-    dplyr::left_join(c_ig, by = c("site", "plotID", "subplotID", "year"))%>%
-    dplyr::left_join(cf, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(rc_ng, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(c_ng, by = c("site", "plotID", "subplotID", "year"))%>%
-      dplyr::left_join(rc_neg, by = c("site", "plotID", "subplotID", "year")) %>%
-      dplyr::left_join(c_neg, by = c("site", "plotID", "subplotID", "year"))%>%
-    dplyr::left_join(nspp_byfam, by = c("site", "plotID", "subplotID", "year"))}
+    dplyr::left_join(rcf, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(rc_ig, by = c("site", "plotID", "subplotID", "eventID"))%>%
+    dplyr::left_join(c_ig, by = c("site", "plotID", "subplotID", "eventID"))%>%
+    dplyr::left_join(cf, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(rc_ng, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(c_ng, by = c("site", "plotID", "subplotID", "eventID"))%>%
+    dplyr::left_join(rc_neg, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(c_neg, by = c("site", "plotID", "subplotID", "eventID"))%>%
+    dplyr::left_join(nspp_byfam, by = c("site", "plotID", "subplotID", "eventID"))}
   if(!is.na(spp)){
     final_table <- final_table %>%
-    dplyr::left_join(rc_sp, by = c("site", "plotID", "subplotID", "year")) %>%
-    dplyr::left_join(c_sp, by = c("site", "plotID", "subplotID", "year"))}
+    dplyr::left_join(rc_sp, by = c("site", "plotID", "subplotID", "eventID")) %>%
+    dplyr::left_join(c_sp, by = c("site", "plotID", "subplotID", "eventID"))}
 
   # seems crazy, i know... but those NAs should all definitely be zero
   final_table <- final_table %>%
@@ -1146,9 +1139,9 @@ npe_plot_centroids <- function(df,
 npe_plot_info <- function(comm){
   return(comm %>%
            tibble::rownames_to_column("rowname")%>%
-           tidyr::separate(rowname, into = c("site", "plot", "scale", "year"), remove = F) %>%
+           tidyr::separate(rowname, into = c("site", "plot", "scale", "eventID"), remove = F) %>%
            dplyr::mutate(plotID = stringr::str_c(site, "_", plot)) %>%
-           dplyr::select(site, plot, scale, year, plotID, rowname))
+           dplyr::select(site, plot, scale, eventID, plotID, rowname))
 }
 
 
@@ -1164,7 +1157,6 @@ npe_plot_info <- function(comm){
 npe_species <- function(neon_div_object,
                         scale = "plot",
                         trace_cover = 0.5,
-                        fix_unks = FALSE,
                         dissolve_years = FALSE,
                         name_cleaner = FALSE) {
   requireNamespace("tidyr")
@@ -1175,18 +1167,17 @@ npe_species <- function(neon_div_object,
 
   full_on_cover <- npe_longform(neon_div_object,
                                 scale = scale,
-                                dissolve_years = dissolve_years,
-                                fix_unks = fix_unks)
+                                timescale = timescale)
   if(name_cleaner) full_on_cover <- name_cleaner(full_on_cover)
 
   template <- full_on_cover %>%
-    dplyr::select(site, plotID, subplotID, year)
+    dplyr::select(site, plotID, subplotID, eventID)
 
   bysp <- full_on_cover%>%
-    dplyr::group_by(site, plotID, subplotID, year) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID) %>%
     dplyr::mutate(total_cover = sum(cover))%>%
     dplyr::ungroup() %>%
-    dplyr::group_by(site, plotID, subplotID, year, scientificName) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID, scientificName) %>%
     dplyr::summarise(cover = sum(cover),
                      total_cover = first(total_cover)) %>%
     dplyr::ungroup() %>%
@@ -1208,12 +1199,12 @@ npe_species <- function(neon_div_object,
                   gen_sp = stringr::str_c(genus, " ", species))
 
   rc_sp <- bysp%>%
-    dplyr::select(site, plotID, subplotID,year, gen_sp, rel_cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, gen_sp, rel_cover) %>%
     dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_"),
                   variable = "relative_cover") %>%
     # the following 3 lines fix some kind of duplicate problem that happened here
     # need to fix something upstream - jan 14 fixed it, need to test still
-    dplyr::group_by(site, plotID, subplotID,year, gen_sp) %>%
+    dplyr::group_by(site, plotID, subplotID,eventID, gen_sp) %>%
     dplyr::summarise(rel_cover = mean(rel_cover)) %>%
     dplyr::ungroup()%>%
     tidyr::pivot_wider(names_from = gen_sp,
@@ -1221,12 +1212,12 @@ npe_species <- function(neon_div_object,
                        values_fill = list(rel_cover = 0))
 
   c_sp<- bysp%>%
-    dplyr::select(site, plotID, subplotID,year, gen_sp, cover) %>%
+    dplyr::select(site, plotID, subplotID,eventID, gen_sp, cover) %>%
     dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_"),
                   variable = "absolute_cover") %>%
     # the following 3 lines fix some kind of duplicate problem that happened here
     # need to fix something upstream - jan 14 fixed it, need to test still
-    dplyr::group_by(site, plotID, subplotID,year, gen_sp, variable) %>%
+    dplyr::group_by(site, plotID, subplotID,eventID, gen_sp, variable) %>%
     dplyr::summarise(cover = mean(cover)) %>%
     dplyr::ungroup()%>%
     tidyr::pivot_wider(names_from = gen_sp,

@@ -5,28 +5,30 @@
 \title{Create a species abundance or occurrence matrix}
 \usage{
 npe_community_matrix(
-  neon_div_object,
+  x,
   scale = "plot",
   trace_cover = 0.5,
-  fix_unks = FALSE,
+  timescale = "annual",
+  input = "neon_div_object",
   binary = FALSE
 )
 }
 \arguments{
-\item{neon_div_object}{the raw diversity data downloaded using
-neonPlantEcology::download_plant_div() or the function
-neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
-
 \item{scale}{what level of aggregation? This can be "1m", "10m", "100m", or "plot",
 which is the default.}
 
 \item{trace_cover}{cover value for subplots where only occupancy was recorded}
 
-\item{fix_unks}{Should the unknown codes be altered with the "unk_fixer()"
-function? Defaults to false. This requires manual investigation and editing
-of the unk_fixer function.}
+\item{input}{by default, longform dataframe is calculated from the diversity
+object and then converted to a community matrix, set this option to something
+else input a longform data frame that was created (and perhaps modified)
+separately}
 
 \item{binary}{should the matrix be converted from percent cover to binary?}
+
+\item{neon_div_object}{the raw diversity data downloaded using
+neonPlantEcology::download_plant_div() or the function
+neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 }
 \description{
 npe_community_matrix creates a wide matrix of species cover or binary (presence/absence)

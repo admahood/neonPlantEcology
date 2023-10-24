@@ -8,8 +8,7 @@ npe_diversity_info(
   neon_div_object,
   scale = "plot",
   trace_cover = 0.5,
-  fix_unks = FALSE,
-  dissolve_years = FALSE,
+  timescale = "annual",
   betadiversity = FALSE,
   name_cleaner = FALSE,
   families = NA,
@@ -26,13 +25,9 @@ which is the default, or "site".}
 
 \item{trace_cover}{cover value for subplots where only occupancy was recorded}
 
-\item{fix_unks}{Should the unknown codes be altered with the "unk_fixer()"
-function? Defaults to false. This requires manual investigation and editing
-of the unk_fixer function.}
-
-\item{dissolve_years}{by default npe_diversity_info groups everything by year.
-The user may set this argument to true to have the function aggregate the years
-together and then calculate diversity and cover indexes.}
+\item{timescale}{by default npe_diversity_info groups everything by year.
+The user may set this argument to "all" to have the function aggregate the years
+together and then calculate diversity and cover indexes, or "subannual" for bout-level.}
 
 \item{betadiversity}{If evaluating at the plot or site level, should beta
 diversity (turnover and nestedness) be calculated. If scale = plot, it will
