@@ -141,7 +141,7 @@ npe_name_cleaner <- function(lf_cover){
 #' @param trace_cover cover value for subplots where only occupancy was recorded
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
 #' which is the default, or "site".
-#' @param divDataType defaults to "plantSpecies", set to "otherVariables" to get 
+#' @param divDataType defaults to "plantSpecies", set to "otherVariables" to get
 #' ground cover (wood, litter, scat etc)
 #' @examples
 #' # raw_div <- npe_download_plant_div(sites = "SRER")
@@ -160,7 +160,7 @@ npe_longform <- function(neon_div_object,
   requireNamespace("tidyr")
   requireNamespace("stringr")
   requireNamespace("magrittr")
-  
+
   if(scale == "plot"){
     cover <- neon_div_object$div_1m2Data %>%
       dtplyr::lazy_dt() %>%
@@ -175,7 +175,7 @@ npe_longform <- function(neon_div_object,
                        family = first(family)) %>%
       dplyr::ungroup() %>%
       tibble::as_tibble()
-    
+
     traces <- neon_div_object$div_10m2Data100m2Data %>%
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
@@ -194,7 +194,7 @@ npe_longform <- function(neon_div_object,
                        family = first(family)) %>%
       dplyr::ungroup() %>%
       tibble::as_tibble()
-    
+
     full_on_cover <- dplyr::bind_rows(cover, traces) %>%
       dplyr::group_by(plotID, taxonID, eventID, nativeStatusCode, scientificName, family) %>%
       dplyr::summarise(cover = sum(cover)) %>%
@@ -202,7 +202,7 @@ npe_longform <- function(neon_div_object,
       tidyr::replace_na(list(family = "Unknown")) %>%
       dplyr::mutate(site = stringr::str_sub(plotID, 1,4),
                     subplotID = "plot")
-    
+
     if(timescale == "all") {
       full_on_cover <- full_on_cover %>%
         mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
@@ -225,11 +225,11 @@ npe_longform <- function(neon_div_object,
         dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
                         family, site, subplotID,eventID) %>%
         dplyr::summarise(cover = max(cover, na.rm=T)) %>%
-        dplyr::ungroup() 
+        dplyr::ungroup()
     }
     return(full_on_cover)
   }
-  
+
   if(scale == "site"){
     cover <- neon_div_object$div_1m2Data %>%
       dtplyr::lazy_dt() %>%
@@ -244,7 +244,7 @@ npe_longform <- function(neon_div_object,
                        family = first(family)) %>%
       dplyr::ungroup() %>%
       tibble::as_tibble()
-    
+
     traces <- neon_div_object$div_10m2Data100m2Data %>%
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
@@ -263,9 +263,9 @@ npe_longform <- function(neon_div_object,
                        family = first(family)) %>%
       dplyr::ungroup() %>%
       tibble::as_tibble()
-    
+
     n_plots <- length(unique(cover$plotID))
-    
+
     full_on_cover <- dplyr::bind_rows(cover, traces) %>%
       dtplyr::lazy_dt() %>%
       dplyr::group_by(plotID, taxonID, eventID, nativeStatusCode, scientificName, family) %>%
@@ -279,7 +279,7 @@ npe_longform <- function(neon_div_object,
       dplyr::ungroup() %>%
       tidyr::replace_na(list(family = "Unknown")) %>%
       tibble::as_tibble()
-    
+
     if(timescale == "all") {
       full_on_cover <- full_on_cover %>%
         mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
@@ -302,11 +302,11 @@ npe_longform <- function(neon_div_object,
         dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
                         family, site, subplotID,eventID) %>%
         dplyr::summarise(cover = max(cover, na.rm=T)) %>%
-        dplyr::ungroup() 
+        dplyr::ungroup()
     }
     return(full_on_cover)
   }
-  
+
   # cover 8 ===========
   cover8 <- neon_div_object$div_1m2Data %>%
     dtplyr::lazy_dt() %>%
@@ -318,13 +318,13 @@ npe_longform <- function(neon_div_object,
     dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) %>%
     tidyr::replace_na(list(family = "Unknown")) %>%
     tibble::as_tibble()
-  
-  
+
+
   # 10m2,100m2 are given 0.5 (we can change later)
   # unique(x$div_10m2Data100m2Data$subplotID) # there are 12 subplots
-  
+
   # traces8 (10m2) ==============
-  traces8 <- neon_div_object$div_10m2Data100m2Data %>% 
+  traces8 <- neon_div_object$div_10m2Data100m2Data %>%
     dtplyr::lazy_dt() %>%
     # dplyr::filter(targetTaxaPresent == "Y") %>%
     dplyr::group_by(plotID, subplotID, taxonID, eventID, scientificName,
@@ -339,7 +339,7 @@ npe_longform <- function(neon_div_object,
     dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) %>%
     tidyr::replace_na(list(family = "Unknown")) %>%
     tibble::as_tibble()
-  
+
   # traces100s ========
   traces100s <- neon_div_object$div_10m2Data100m2Data %>%
     dtplyr::lazy_dt() %>%
@@ -356,7 +356,7 @@ npe_longform <- function(neon_div_object,
                     subplotID == "41") %>%
     tidyr::replace_na(list(family = "Unknown")) %>%
     tibble::as_tibble()
-  
+
   # aggregating at different spatial scales ------------------------------------
   cover8_1m2 <- cover8 %>%
     dplyr::group_by(plotID, subplotID, taxonID, eventID, nativeStatusCode, scientificName, family) %>%
@@ -381,11 +381,11 @@ npe_longform <- function(neon_div_object,
                      site = first(site)) %>%
     dplyr::ungroup()
 
-  
+
   if(scale == "1m") full_on_cover <- cover8_1m2
   if(scale == "10m") full_on_cover <- cover8_1m2_10m2
   if(scale == "100m") full_on_cover <- cover4
-  
+
   if(timescale == "all") {
     full_on_cover <- full_on_cover %>%
       mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
@@ -408,9 +408,9 @@ npe_longform <- function(neon_div_object,
       dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
                       family, site, subplotID,eventID) %>%
       dplyr::summarise(cover = max(cover, na.rm=T)) %>%
-      dplyr::ungroup() 
+      dplyr::ungroup()
   }
-  
+
   return(full_on_cover)
 }
 #' Create a species abundance or occurrence matrix
@@ -422,13 +422,20 @@ npe_longform <- function(neon_div_object,
 #' @param neon_div_object the raw diversity data downloaded using
 #' neonPlantEcology::download_plant_div() or the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
-#' @param scale what level of aggregation? This can be "1m", "10m", "100m", or "plot",
-#' which is the default.
+#' @param scale what level of aggregation? This can be "1m", "10m", "100m",
+#' "plot", which is the default, or "site".
+#' @param timescale what temporal resolution? can be "subannual", which is really
+#' only applicable at sites where there are multiple bouts per year, "annual" or
+#' "all", which dissolves together the entire time series.
 #' @param trace_cover cover value for subplots where only occupancy was recorded
 #' @param binary should the matrix be converted from percent cover to binary?
 #' @param input by default, longform dataframe is calculated from the diversity
-#' object and then converted to a community matrix, set this option to something
-#' else input a longform data frame that was created (and perhaps modified)
+#' object and then converted to a community matrix, set this option to "lf"
+#' to use a longform data frame that was created separately (and perhaps modified).
+#' Another option is input = "divStack", which is using the output from the
+#' divStack function in the neonPlants package. Using a premade longform data
+#' frame or a divStack output will use the spatial and temporal scale of that
+#' input data
 #' separately
 #' @export
 npe_community_matrix <- function(x,
@@ -441,13 +448,29 @@ npe_community_matrix <- function(x,
   requireNamespace("dplyr")
   requireNamespace("tibble")
   requireNamespace("magrittr")
-  
+
+  if(input == "divStack"){
+    return(
+      # currently not incorporating scale and timescale options
+      x %>%
+        dplyr::select(plotID, subplotID, eventID, taxonID, targetTaxaPresent) %>%
+        transmute(row = paste(plotID, subplotID, eventID, sep = "_"),
+                  taxonID = taxonID,
+                  present = ifelse(targetTaxaPresent == "Y",1,0)) %>%
+        pivot_wider(values_from = present, names_from = taxonID, values_fill = 0,
+                    values_fn = function(x)sum(x)) %>%
+        tibble::column_to_rownames("row")
+      )
+  }
+
   if(input == "neon_div_object"){
     longform_df <- x %>%
-     npe_longform(scale = scale, trace_cover = trace_cover, 
-                  timescale = timescale) 
-  }else{longform_df <- x}
-  
+     npe_longform(scale = scale, trace_cover = trace_cover,
+                  timescale = timescale)
+  }
+
+  if(input == "lf"){longform_df <- x}
+
   if(!binary){
     return(
       longform_df %>%
