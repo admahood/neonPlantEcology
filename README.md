@@ -12,17 +12,19 @@ This package contains scripts for processing plant species cover and occurrence 
 
 ## Use
 
-### Download
+### npe_download
 
 First, download some data using the `download_plant_div` function. It defaults to download the diversity data for the Santa Rita Experimental Range in Domain 14 in Arizona. The `sites` arguement in this function is used to specify which site (or sites) you wish to download. A list of field sites can be found [here](https://www.neonscience.org/field-sites/field-sites-map/list).
 
-`sites <- download_plant_div(sites = c("SRER", "JORN")`
+`sites <- npe_download_plant_div(sites = c("SRER", "JORN")`
 
 The output is a list of four things. The first two are of most interest. The first list item is the abundances observed in the 1m<sup>2</sup> subplots. The second list item is the occurrences observed for the 10m<sup>2</sup> and 100m<sup>2</sup> subplots.
 
+The function `npe_download` is more generalizaed, and can be used to download any data product from neon.
+
 ### npe_community_matrix
 
-This function converts the diversity object downloaded from NEON into a matrix of either abundances (percent cover from 0-100) or occurrences (0 or 1), at the scale of your choosing (1m<sup>2</sup>, 10m<sup>2</sup>, 100m<sup>2</sup>, or 400m<sup>2</sup>, which is a whole plot).
+This function converts the diversity object downloaded from NEON into a matrix of either abundances (percent cover from 0-100) or occurrences (0 or 1), at the scale of your choosing (1m<sup>2</sup>, 10m<sup>2</sup>, 100m<sup>2</sup>, or 400m<sup>2</sup>, which is a whole plot). It can also take as an input the output from the `divStack` function in the neonPlants package.
 
 `species_occurrence_matrix <- get_community_matrix(sites, binary=TRUE)`
 
