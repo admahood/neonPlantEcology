@@ -8,9 +8,17 @@ npe_species(
   neon_div_object,
   scale = "plot",
   trace_cover = 0.5,
-  dissolve_years = FALSE,
-  name_cleaner = FALSE
+  timescale = "annual"
 )
+}
+\arguments{
+\item{neon_div_object}{a neon diversity object}
+
+\item{scale}{the spatial scale at which to aggregate}
+
+\item{trace_cover}{what cover value to set presence data to}
+
+\item{timescale}{what temporal scale to aggregate to}
 }
 \description{
 This extracts the cover and relative cover of all species into a data frame.

@@ -4,10 +4,10 @@
 \alias{npe_download_plant_div}
 \title{Plant diversity data downloader}
 \usage{
-npe_download_plant_div(sites = "SRER")
+npe_download_plant_div(sites = "JORN")
 }
 \arguments{
-\item{sites}{a vector of NEON site abbreviations. Defaults to "SRER"}
+\item{sites}{a vector of NEON site abbreviations. Defaults to "JORN"}
 }
 \description{
 A function to download plant diversity data from the NEON API.
@@ -18,7 +18,7 @@ Data comes in two separate components:
 10 and 100m2 subplots with presence only (second item of the list)
 }
 \examples{
-# diversity_object <- download_plant_div(sites = "SRER")
+# diversity_object <- download_plant_div(sites = "JORN")
 }
 \keyword{diversity}
 \keyword{download}

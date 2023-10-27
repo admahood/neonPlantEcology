@@ -6,13 +6,13 @@
 #' Data comes in two separate components:
 #' 1m2 subplots with cover estimates (first item of the list)
 #' 10 and 100m2 subplots with presence only (second item of the list)
-#' @param sites a vector of NEON site abbreviations. Defaults to "SRER"
+#' @param sites a vector of NEON site abbreviations. Defaults to "JORN"
 #' @keywords download neon diversity
 #'
 #' @examples
-#' # diversity_object <- download_plant_div(sites = "SRER")
+#' # diversity_object <- download_plant_div(sites = "JORN")
 #' @export
-npe_download_plant_div <- function(sites = "SRER"){
+npe_download_plant_div <- function(sites = "JORN"){
   requireNamespace("neonUtilities")
   neonUtilities::loadByProduct(dpID = "DP1.10058.001",
                 site = sites,
@@ -27,7 +27,7 @@ npe_download_plant_div <- function(sites = "SRER"){
 #' products are provided as plain language options, otherwise the user
 #' can enter the product ID number (dpID).
 #'
-#' @param sites a vector of NEON site abbreviations. Defaults to "SRER"
+#' @param sites a vector of NEON site abbreviations. Defaults to "JORN"
 #' @param product a plain language vector of the data product to be downloaded.
 #' Can be "plant_diversity", "litterfall", "woody_veg_structure",
 #' "belowground_biomass", "herbaceous_clip", "coarse_downed_wood",
@@ -37,9 +37,9 @@ npe_download_plant_div <- function(sites = "SRER"){
 #' @keywords download neon diversity
 #'
 #' @examples
-#' # diversity_object <- npe_download(sites = "SRER")
+#' # diversity_object <- npe_download(sites = "JORN")
 #' @export
-npe_download <- function(sites = "SRER",
+npe_download <- function(sites = "JORN",
                          dpID = NA,
                          product = "plant_diversity"){
   requireNamespace("neonUtilities")
@@ -60,7 +60,7 @@ npe_download <- function(sites = "SRER",
 }
 
 ############################################################
-# name_cleaner tries to fix as many typos, etc as possible #
+# npe_name_cleaner tries to fix as many typos, etc as possible #
 ############################################################
 
 #' Clean scientific names
@@ -418,7 +418,7 @@ npe_longform <- function(neon_div_object,
 #' npe_community_matrix creates a wide matrix of species cover or binary (presence/absence)
 #' values with the plot/subplot/year as rownames. This is useful for the vegan
 #' package, hence the name.
-#'
+#' @param x Input object. See input argument help for more details.
 #' @param neon_div_object the raw diversity data downloaded using
 #' neonPlantEcology::download_plant_div() or the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
@@ -450,17 +450,57 @@ npe_community_matrix <- function(x,
   requireNamespace("magrittr")
 
   if(input == "divStack"){
-    return(
-      # currently not incorporating scale and timescale options
-      x %>%
+
+    if(scale == "plot"){
+      cm <- x %>%
         dplyr::select(plotID, subplotID, eventID, taxonID, targetTaxaPresent) %>%
-        transmute(row = paste(plotID, subplotID, eventID, sep = "_"),
+        dplyr::mutate(subplotID = "plot")
+    }else{
+      cm <- x %>%
+        dplyr::select(plotID, subplotID, eventID, taxonID, targetTaxaPresent)
+    }
+
+    if(timescale == "annual"){
+      cmt <- cm %>%
+        dtplyr::lazy_dt() %>%
+        dplyr::mutate(bout = stringr::str_extract(eventID,".[\\d].") %>%
+                        stringr::str_remove_all("\\."),
+               eventID = stringr::str_extract(eventID, "\\d{4}")) %>%
+        dplyr::group_by(plotID, subplotID, taxonID, eventID) %>%
+        dplyr::mutate(present = ifelse(targetTaxaPresent == "Y", 1, 0)) %>%
+        dplyr::summarise(present = max(present)) %>%
+        dplyr::ungroup() %>%
+        tibble::as_tibble()
+    }
+    if(timescale == "subannual"){
+      cmt <- cm %>%
+        dtplyr::lazy_dt() %>%
+        dplyr::group_by(plotID, subplotID, taxonID, eventID) %>%
+        dplyr::mutate(present = ifelse(targetTaxaPresent == "Y", 1, 0)) %>%
+        dplyr::summarise(present = max(present)) %>%
+        dplyr::ungroup() %>%
+        tibble::as_tibble()
+    }
+    if(timescale == "all"){
+      cmt <- cm %>%
+        dtplyr::lazy_dt() %>%
+        dplyr::group_by(plotID, subplotID, taxonID) %>%
+        dplyr::mutate(present = ifelse(targetTaxaPresent == "Y", 1, 0)) %>%
+        dplyr::summarise(present = max(present)) %>%
+        dplyr::ungroup() %>%
+        tibble::as_tibble()
+    }
+
+    return(
+      cmt %>%
+        dplyr::transmute(row = paste(plotID, subplotID, eventID, sep = "_"),
                   taxonID = taxonID,
-                  present = ifelse(targetTaxaPresent == "Y",1,0)) %>%
-        pivot_wider(values_from = present, names_from = taxonID, values_fill = 0,
-                    values_fn = function(x)sum(x)) %>%
+                  present=present) %>%
+        tidyr::pivot_wider(values_from = present, names_from = taxonID,
+                           values_fill = 0,
+                  values_fn = function(x)sum(x)) %>%
         tibble::column_to_rownames("row")
-      )
+    )
   }
 
   if(input == "neon_div_object"){
@@ -538,7 +578,6 @@ npe_diversity_info <- function(neon_div_object,
                                trace_cover = 0.5,
                                timescale = "annual",
                                betadiversity = FALSE,
-                               name_cleaner = FALSE,
                                families = NA,
                                spp = NA) {
   requireNamespace("tidyr")
@@ -1107,6 +1146,8 @@ npe_change_native_status <- function(df, taxon, site, new_code){
 #'"spatial", which will turn the data frame into an sf data frame, or "latlong",
 #'which will add the latitudes and longitudes and other ancillary data as
 #'columns only.
+#'@param spatial_only set to TRUE if you only want the coordinates and none of
+#'the ancillary variables.
 #'@param dest_dir where to download the files
 #'@param input to what kind of neonPlantEcology product are you appending? Can
 #'be "community_matrix", "longform_cover", or "summary_info".
@@ -1116,7 +1157,7 @@ npe_change_native_status <- function(df, taxon, site, new_code){
 npe_plot_centroids <- function(df,
                                dest_dir = file.path(getwd(), "tmp"),
                                type = "latlong",
-                               spatial_only = T,
+                               spatial_only = TRUE,
                                input = "community_matrix"){
   requireNamespace("stringr")
   requireNamespace("sf")
@@ -1143,7 +1184,7 @@ npe_plot_centroids <- function(df,
   if(input == "summary_info") outdf <- df %>%
       dplyr::left_join(neon_plots, by = "plotID")
 
-  if(spatial_only && type == "spatial") outdf <- dplyr::select(outdf, plotID )
+  if(spatial_only && type == "spatial") outdf <- dplyr::select(outdf, plotID)
   if(spatial_only && type == "latlong") outdf <- dplyr::select(outdf, plotID, latitude, longitude)
   return(outdf)
 }
@@ -1174,14 +1215,16 @@ npe_plot_info <- function(comm){
 #' This is basically the same as npe_community_matrix, except the species names
 #' are full, it's in a tibble format, and the plot information is not collapsed
 #' into the row names.
-#'
+#' @param neon_div_object a neon diversity object
+#' @param scale the spatial scale at which to aggregate
+#' @param trace_cover what cover value to set presence data to
+#' @param timescale what temporal scale to aggregate to
 #' @export
 # Cover by species ===========================================================
 npe_species <- function(neon_div_object,
                         scale = "plot",
                         trace_cover = 0.5,
-                        dissolve_years = FALSE,
-                        name_cleaner = FALSE) {
+                        timescale = "annual") {
   requireNamespace("tidyr")
   requireNamespace("dplyr")
   requireNamespace('vegan')
@@ -1191,7 +1234,6 @@ npe_species <- function(neon_div_object,
   full_on_cover <- npe_longform(neon_div_object,
                                 scale = scale,
                                 timescale = timescale)
-  if(name_cleaner) full_on_cover <- name_cleaner(full_on_cover)
 
   template <- full_on_cover %>%
     dplyr::select(site, plotID, subplotID, eventID)

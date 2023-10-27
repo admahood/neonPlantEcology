@@ -4,10 +4,10 @@
 \alias{npe_download}
 \title{Data downloader}
 \usage{
-npe_download(sites = "SRER", dpID = NA, product = "plant_diversity")
+npe_download(sites = "JORN", dpID = NA, product = "plant_diversity")
 }
 \arguments{
-\item{sites}{a vector of NEON site abbreviations. Defaults to "SRER"}
+\item{sites}{a vector of NEON site abbreviations. Defaults to "JORN"}
 
 \item{dpID}{if you need a data product not given as one of the product
 options, set the data product ID here (e.g. "DP1.10023.001").}
@@ -23,7 +23,7 @@ products are provided as plain language options, otherwise the user
 can enter the product ID number (dpID).
 }
 \examples{
-# diversity_object <- npe_download(sites = "SRER")
+# diversity_object <- npe_download(sites = "JORN")
 }
 \keyword{diversity}
 \keyword{download}

@@ -14,6 +14,8 @@ npe_community_matrix(
 )
 }
 \arguments{
+\item{x}{Input object. See input argument help for more details.}
+
 \item{scale}{what level of aggregation? This can be "1m", "10m", "100m",
 "plot", which is the default, or "site".}
 

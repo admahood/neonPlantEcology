@@ -8,7 +8,7 @@ npe_plot_centroids(
   df,
   dest_dir = file.path(getwd(), "tmp"),
   type = "latlong",
-  spatial_only = T,
+  spatial_only = TRUE,
   input = "community_matrix"
 )
 }
@@ -21,6 +21,9 @@ npe_plot_centroids(
 "spatial", which will turn the data frame into an sf data frame, or "latlong",
 which will add the latitudes and longitudes and other ancillary data as
 columns only.}
+
+\item{spatial_only}{set to TRUE if you only want the coordinates and none of
+the ancillary variables.}
 
 \item{input}{to what kind of neonPlantEcology product are you appending? Can
 be "community_matrix", "longform_cover", or "summary_info".}

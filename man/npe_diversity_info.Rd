@@ -10,7 +10,6 @@ npe_diversity_info(
   trace_cover = 0.5,
   timescale = "annual",
   betadiversity = FALSE,
-  name_cleaner = FALSE,
   families = NA,
   spp = NA
 )
