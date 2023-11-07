@@ -47,7 +47,7 @@ This function converts the diversity object downloaded from NEON into a matrix o
 |turnover | species turnover according to vegan::nestedbetajac() (Baselga 2012) |betadiversity = TRUE, scale = c("plot", "site")|
 |nestedness | nestedness according to vegan::nestedbetajac() (Baselga 2012) |betadiversity = TRUE, scale = c("plot", "site")|
 
-### npe_longform_cover
+### npe_longform
 
 This is really the meat of the package. It is used as a helper function for `vegify` and `get_diversity_info`. In many cases the end user will not need to deal with it, but if all you want is a longform dataframe of the percent cover of each species in each plot or subplot, this is the function for you. 
 
@@ -61,9 +61,7 @@ These decisions are given as arguments to the function call. The function aggreg
 
 ### npe_change_native_status
 
-There are a many instances where plants are classified as unknown, but still have a certain level of known-ness. For example, an unknown Opuntia sp. may have the genus and family recorded, but still be listed as unknown for the nativeStatusCode. It is possible to look at local flora and determine that while the exact species is unknown, the plant is very likely to be native or non-native. For example, a site may have 5 species of Opuntia that are all native. In this case, if the user cares about the native status, we provide a script that can be edited manually (unk_investigation.R) to address this concern. I did a very basic first try for the sites we were interested in examining while I was writing these functions. All of the above functions have an arguement, `fix_unks`, that defaults to `FALSE`. If it is set to `TRUE`, the `unk_fixer` function is called from the unk_investigation.R script and native status codes are changed according to the script. This is still very much in the beta stage.
-
-Another thought on fixing unknown species is using a model that incorporates that uncertainty developed recently by Anna I Spiers (2021).
+There are a many instances where plants are classified as unknown, but still have a certain level of known-ness. For example, an unknown Opuntia sp. may have the genus and family recorded, but still be listed as unknown for the nativeStatusCode. It is possible to look at local flora and determine that while the exact species is unknown, the plant is very likely to be native or non-native. For example, a site may have 5 species of Opuntia that are all native. In this case, if the user cares about the native status, we provide a script that can be edited manually (unk_investigation.R) to address this concern. I did a very basic first try for the sites we were interested in examining while I was writing these functions. All of the above functions have an arguement, `fix_unks`, that defaults to `FALSE`. If it is set to `TRUE`, the `unk_fixer` function is called from the unk_investigation.R script and native status codes are changed according to the script. This is still very much in the beta stage. Another thought on dealing with unknown species is using a model that incorporates that uncertainty developed recently by Anna I Spiers (2021).
 
 # References
 
