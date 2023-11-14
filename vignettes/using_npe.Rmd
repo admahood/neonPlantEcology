@@ -1,0 +1,88 @@
+---
+title: "using neonPlantEcology"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{using_npe}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidyverse)
+library(neonPlantEcology)
+```
+
+# Doing a community ecology analysis using `vegan`
+
+## Setup
+
+Load the `tidyverse` library along with `neonPlantEcology`. There is a 
+pre-installed dataset which contains the neonUtilities-generated list object 
+for the Jornada Experimental Range ("JORN") and the Santa Rita Experimental 
+Range ("SRER") from domain 14. This can be downloaded directly by uncommenting
+the following code, or just call `data("D14")`.
+
+
+```{r getdata}
+# D14 <- npe_site_ids(domain = "D14") %>%
+#   npe_download_plant_div(sites = .)
+
+data("D14")
+
+```
+
+## Wrangle the data
+
+Use `npe_community_matrix` to get the data into the needed format. By default, 
+it aggregates annually to the (20m x 20m) plot scale. Use npe_plot_info to get 
+all of the information from the rownames into a more interpretable format.
+
+```{r wrangle}
+comm <- npe_community_matrix(D14)
+comm[1:4, 1:4]
+
+metadata <- npe_plot_info(comm)
+
+
+```
+
+## `vegan` analysis
+
+first we'll do a species accumulation curve for each site.
+
+```{r sac}
+library(vegan)
+
+# checking the metadata file to see where JORN stops and SRER begins
+which(metadata$site == "JORN") %>% range()
+which(metadata$site == "SRER") %>% range()
+
+# performing and plotting the species accumulation curve analysis
+sp_jorn <- vegan::specaccum(comm[1:152,])
+sp_srer <- vegan::specaccum(comm[152:347,])
+plot(sp_srer, col = "blue")
+plot(sp_jorn, col = "gold", add=T)
+```
+
+## NMDS
+
+```{r nmds, fig.width=7.5, fig.height=5}
+nmds <- metaMDS(comm,trace = F)
+
+sites <- nmds$points %>%
+  as_tibble(rownames = "rowname") %>%
+  left_join(metadata)
+
+ggplot(sites, aes(x=MDS1, y=MDS2, color = eventID, shape = site)) +
+  geom_point() +
+  theme_classic() +
+  scale_color_brewer(palette = "Dark2")
+
+```

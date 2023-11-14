@@ -5,3 +5,4 @@ packrat/lib*/
 figs/*
 R/terrestrial_site_summary.R
 data/*
+inst/doc

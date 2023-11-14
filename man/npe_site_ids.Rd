@@ -9,7 +9,7 @@ npe_site_ids(all = FALSE, domain = NA, type = NA)
 \arguments{
 \item{all}{if TRUE, returns a vector of all siteID codes}
 
-\item{domain}{can be one or more domain codes,
+\item{domain}{can be one or more domain codes, as a character vector.
 e.g. domain = c("D01", "D14")}
 
 \item{type}{can be "Core Terrestrial" or "Relocatable Terrestrial"}

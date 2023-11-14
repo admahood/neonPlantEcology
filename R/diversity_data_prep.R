@@ -1299,18 +1299,18 @@ npe_species <- function(neon_div_object,
 #' list of siteID codes to feed into npe_download.
 #'
 #' @param all if TRUE, returns a vector of all siteID codes
-#' @param domain can be one or more domain codes,
+#' @param domain can be one or more domain codes, as a character vector.
 #' e.g. domain = c("D01", "D14")
 #' @param type can be "Core Terrestrial" or "Relocatable Terrestrial"
 #' @export
 npe_site_ids <- function(all = FALSE, domain = NA, type = NA){
-  load("data/sites.rda")
   requireNamespace("tidyr")
   requireNamespace("dplyr")
   requireNamespace("magrittr")
+  data("sites")
   if(all) return(sites$siteID)
   if(!is.na(domain[1])) sites <- dplyr::filter(sites, domainNumb %in% domain)
   if(!is.na(type[1])) sites <- dplyr::filter(sites, type %in% siteTYpe)
-  return(sites)
+  return(sites %>% pull(siteID))
 }
 
