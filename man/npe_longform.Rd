@@ -9,7 +9,7 @@ npe_longform(
   trace_cover = 0.5,
   scale = "plot",
   divDataType = "plantSpecies",
-  timescale = c("subannual", "annual", "all")
+  timescale = "annual"
 )
 }
 \arguments{

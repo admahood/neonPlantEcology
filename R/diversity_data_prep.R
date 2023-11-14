@@ -151,7 +151,7 @@ npe_longform <- function(neon_div_object,
                          trace_cover=0.5,
                          scale = "plot",
                          divDataType = "plantSpecies",
-                         timescale = c("subannual", "annual", "all")){
+                         timescale = "annual"){
   .datatable.aware <- TRUE
   requireNamespace("data.table")
   requireNamespace("dplyr")
@@ -205,7 +205,7 @@ npe_longform <- function(neon_div_object,
 
     if(timescale == "all") {
       full_on_cover <- full_on_cover %>%
-        mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
       year_range <- unique(full_on_cover$eventID)%>%
         as.numeric %>%
         range %>%
@@ -219,8 +219,9 @@ npe_longform <- function(neon_div_object,
         dplyr::mutate(eventID = year_range)
     }
     if(timescale == "annual") {
-      full_on_cover <- full_on_cover %>%
-        mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+      full_on_cover <- full_on_cover  %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),
+                        sep = "\\.",remove = F)
       full_on_cover <- full_on_cover %>%
         dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
                         family, site, subplotID,eventID) %>%
@@ -281,8 +282,8 @@ npe_longform <- function(neon_div_object,
       tibble::as_tibble()
 
     if(timescale == "all") {
-      full_on_cover <- full_on_cover %>%
-        mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+      full_on_cover <- full_on_cover  %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
       year_range <- unique(full_on_cover$eventID)%>%
         as.numeric %>%
         range %>%
@@ -296,8 +297,8 @@ npe_longform <- function(neon_div_object,
         dplyr::mutate(eventID = year_range)
     }
     if(timescale == "annual") {
-      full_on_cover <- full_on_cover %>%
-        mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+      full_on_cover <- full_on_cover  %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
       full_on_cover <- full_on_cover %>%
         dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
                         family, site, subplotID,eventID) %>%
@@ -388,7 +389,7 @@ npe_longform <- function(neon_div_object,
 
   if(timescale == "all") {
     full_on_cover <- full_on_cover %>%
-      mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+      tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
     year_range <- unique(full_on_cover$eventID)%>%
       as.numeric %>%
       range %>%
@@ -403,7 +404,7 @@ npe_longform <- function(neon_div_object,
   }
   if(timescale == "annual") {
     full_on_cover <- full_on_cover %>%
-      mutate(eventID = as.numeric(stringr::str_sub(eventID,8,11)))
+      tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
     full_on_cover <- full_on_cover %>%
       dplyr::group_by(plotID, taxonID, nativeStatusCode, scientificName,
                       family, site, subplotID,eventID) %>%
