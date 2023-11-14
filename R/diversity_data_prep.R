@@ -141,8 +141,6 @@ npe_name_cleaner <- function(lf_cover){
 #' @param trace_cover cover value for subplots where only occupancy was recorded
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
 #' which is the default, or "site".
-#' @param divDataType defaults to "plantSpecies", set to "otherVariables" to get
-#' ground cover (wood, litter, scat etc)
 #' @examples
 #' # raw_div <- npe_download_plant_div(sites = "SRER")
 #' # lf_div <- npe_longform(raw_div)
@@ -150,7 +148,6 @@ npe_name_cleaner <- function(lf_cover){
 npe_longform <- function(neon_div_object,
                          trace_cover=0.5,
                          scale = "plot",
-                         divDataType = "plantSpecies",
                          timescale = "annual"){
   .datatable.aware <- TRUE
   requireNamespace("data.table")
@@ -165,7 +162,7 @@ npe_longform <- function(neon_div_object,
     cover <- neon_div_object$div_1m2Data %>%
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
-      dplyr::filter(divDataType == divDataType) %>%
+      dplyr::filter(divDataType == "plantSpecies") %>%
       tidyr::replace_na(list(percentCover=trace_cover)) %>%
       dplyr::filter(taxonID != "") %>%
       dplyr::group_by(plotID, taxonID, eventID) %>%
@@ -235,7 +232,7 @@ npe_longform <- function(neon_div_object,
     cover <- neon_div_object$div_1m2Data %>%
       dtplyr::lazy_dt() %>%
       dplyr::mutate(endDate = as.Date(endDate)) %>%
-      dplyr::filter(divDataType == divDataType) %>%
+      dplyr::filter(divDataType == "plantSpecies") %>%
       tidyr::replace_na(list(percentCover=trace_cover)) %>%
       dplyr::filter(taxonID != "") %>%
       dplyr::group_by(plotID, taxonID, eventID) %>%
@@ -311,7 +308,7 @@ npe_longform <- function(neon_div_object,
   # cover 8 ===========
   cover8 <- neon_div_object$div_1m2Data %>%
     dtplyr::lazy_dt() %>%
-    dplyr::filter(divDataType == divDataType) %>%
+    dplyr::filter(divDataType == "plantSpecies") %>%
     tidyr::replace_na(list(percentCover=trace_cover)) %>%
     dplyr::select(plotID, subplotID, taxonID, eventID, cover = percentCover,
                   nativeStatusCode, scientificName, family) %>%
@@ -413,6 +410,353 @@ npe_longform <- function(neon_div_object,
   }
 
   return(full_on_cover)
+}
+
+#' Get ground cover and other variables
+#'
+#' @import data.table
+#' @importFrom data.table :=
+#' @importFrom dtplyr lazy_dt
+#' @param neon_div_object  the raw diversity data downloaded using
+#' neonPlantEcology::download_plant_div() or the function
+#' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
+#' @param scale the spatial scale of aggregation. Can be "1m", "10m", "100m",
+#' "plot" or "site". default is "plot".
+#' @param timescale The temporal scale of aggregation. Can be "all", "annual" or
+#' "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".
+#' @export
+npe_groundcover <- function(neon_div_object,
+                            scale = "plot",
+                            timescale = "annual"){
+
+  .datatable.aware <- TRUE
+  requireNamespace("data.table")
+  requireNamespace("dplyr")
+  requireNamespace("dtplyr")
+  requireNamespace("tidyverse")
+  requireNamespace("tidyr")
+  requireNamespace("stringr")
+  requireNamespace("magrittr")
+
+  if(scale == "plot"){
+    full_on_cover <- neon_div_object$div_1m2Data %>%
+      dtplyr::lazy_dt() %>%
+      dplyr::mutate(endDate = as.Date(endDate)) %>%
+      dplyr::filter(divDataType == "otherVariables") %>%
+      # tidyr::replace_na(list(percentCover=0.5)) %>%
+      dplyr::filter(otherVariables != "") %>%
+      dplyr::group_by(plotID, otherVariables, eventID) %>%
+      dplyr::summarise(cover = sum(percentCover, na.rm=TRUE)/ifelse(
+        as.numeric(stringr::str_sub(eventID,8,11))< 2019, 8,6)) %>%
+      dplyr::ungroup() %>%
+      tibble::as_tibble() %>%
+      dplyr::group_by(plotID, otherVariables, eventID) %>%
+      dplyr::summarise(cover = sum(cover)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(site = stringr::str_sub(plotID, 1,4),
+                    subplotID = "plot")
+
+    if(timescale == "all") {
+      full_on_cover <- full_on_cover %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+      year_range <- unique(full_on_cover$eventID)%>%
+        as.numeric %>%
+        range %>%
+        paste(collapse = "-")
+      n_years <- length(unique(full_on_cover$eventID))
+      full_on_cover <- full_on_cover %>%
+        dplyr::group_by(plotID, otherVariables, site, subplotID) %>%
+        dplyr::summarise(cover = sum(cover, na.rm=T)/n_years) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(eventID = year_range)
+    }
+    if(timescale == "annual") {
+      full_on_cover <- full_on_cover  %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),
+                        sep = "\\.",remove = F)
+      full_on_cover <- full_on_cover %>%
+        dplyr::group_by(plotID, otherVariables, site, subplotID,eventID) %>%
+        dplyr::summarise(cover = max(cover, na.rm=T)) %>%
+        dplyr::ungroup()
+    }
+    return(full_on_cover)
+  }
+
+  if(scale == "site"){
+    cover <- neon_div_object$div_1m2Data %>%
+      dtplyr::lazy_dt() %>%
+      dplyr::mutate(endDate = as.Date(endDate)) %>%
+      dplyr::filter(divDataType == "otherVariables") %>%
+      # tidyr::replace_na(list(percentCover=trace_cover)) %>%
+      dplyr::filter(otherVariables != "") %>%
+      dplyr::group_by(plotID, otherVariables, eventID) %>%
+      dplyr::summarise(cover = sum(percentCover, na.rm=TRUE)/ifelse(
+        as.numeric(stringr::str_sub(eventID,8,11))< 2019, 8,6)) %>%
+      dplyr::ungroup() %>%
+      tibble::as_tibble()
+
+    n_plots <- length(unique(cover$plotID))
+
+    full_on_cover <- cover %>%
+      dtplyr::lazy_dt() %>%
+      dplyr::group_by(plotID, otherVariables, eventID) %>%
+      dplyr::summarise(cover = sum(cover)) %>%
+      dplyr::ungroup()%>%
+      dplyr::mutate(site = stringr::str_sub(plotID, 1,4)) %>%
+      dplyr::group_by(site, otherVariables, eventID) %>%
+      dplyr::summarise(cover = sum(cover)/n_plots) %>%
+      dplyr::mutate(subplotID = "site",
+                    plotID = "site") %>%
+      dplyr::ungroup() %>%
+      tibble::as_tibble()
+
+    if(timescale == "all") {
+      full_on_cover <- full_on_cover  %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+      year_range <- unique(full_on_cover$eventID)%>%
+        as.numeric %>%
+        range %>%
+        paste(collapse = "-")
+      n_years <- length(unique(full_on_cover$eventID))
+      full_on_cover <- full_on_cover %>%
+        dplyr::group_by(plotID, otherVariables, site, subplotID) %>%
+        dplyr::summarise(cover = sum(cover, na.rm=T)/n_years) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(eventID = year_range)
+    }
+    if(timescale == "annual") {
+      full_on_cover <- full_on_cover  %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+      full_on_cover <- full_on_cover %>%
+        dplyr::group_by(plotID, otherVariables, site, subplotID,eventID) %>%
+        dplyr::summarise(cover = max(cover, na.rm=T)) %>%
+        dplyr::ungroup()
+    }
+    return(full_on_cover)
+  }
+
+  # cover 8 ===========
+  cover8 <- neon_div_object$div_1m2Data %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::filter(divDataType == "otherVariables") %>%
+    # tidyr::replace_na(list(percentCover=trace_cover)) %>%
+    dplyr::select(plotID, subplotID, otherVariables, eventID, cover = percentCover) %>%
+    dplyr::filter(otherVariables != "") %>%
+    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) %>%
+    tibble::as_tibble()
+
+    # aggregating at different spatial scales ------------------------------------
+  cover8_1m2 <- cover8 %>%
+    dplyr::group_by(plotID, subplotID, otherVariables, eventID) %>%
+    dplyr::summarise(cover = sum(cover)) %>%
+    dplyr::ungroup()%>%
+    dplyr::mutate(site = stringr::str_sub(plotID, 1,4))
+
+  cover4 <- cover8_1m2 %>%
+    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1,2)) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID, otherVariables) %>%
+    dplyr::summarise(cover = sum(cover)) %>% # this is summing together repeats from the rbinding
+    dplyr::ungroup()
+
+
+  if(scale == "1m") full_on_cover <- cover8_1m2
+  if(scale == "10m") full_on_cover <- cover8_1m2 # it's the same
+  if(scale == "100m") full_on_cover <- cover4
+
+  if(timescale == "all") {
+    full_on_cover <- full_on_cover %>%
+      tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+    year_range <- unique(full_on_cover$eventID)%>%
+      as.numeric %>%
+      range %>%
+      paste(collapse = "-")
+    n_years <- length(unique(full_on_cover$eventID))
+    full_on_cover <- full_on_cover %>%
+      dplyr::group_by(plotID, otherVariables, site, subplotID) %>%
+      dplyr::summarise(cover = sum(cover, na.rm=T)/n_years) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(eventID = year_range)
+  }
+  if(timescale == "annual") {
+    full_on_cover <- full_on_cover %>%
+      tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+    full_on_cover <- full_on_cover %>%
+      dplyr::group_by(plotID, otherVariables, site, subplotID,eventID) %>%
+      dplyr::summarise(cover = max(cover, na.rm=T)) %>%
+      dplyr::ungroup()
+  }
+
+  return(full_on_cover)
+}
+
+#' Get heights
+#'
+#' @import data.table
+#' @importFrom data.table :=
+#' @importFrom dtplyr lazy_dt
+#' @param neon_div_object  the raw diversity data downloaded using
+#' neonPlantEcology::download_plant_div() or the function
+#' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
+#' @param scale the spatial scale of aggregation. Can be "1m", "10m", "100m",
+#' "plot" or "site". default is "plot".
+#' @param timescale The temporal scale of aggregation. Can be "all", "annual" or
+#' "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".
+#' @export
+npe_heights <- function(neon_div_object,
+                            scale = "plot",
+                            timescale = "annual"){
+
+  .datatable.aware <- TRUE
+  requireNamespace("data.table")
+  requireNamespace("dplyr")
+  requireNamespace("dtplyr")
+  requireNamespace("tidyverse")
+  requireNamespace("tidyr")
+  requireNamespace("stringr")
+  requireNamespace("magrittr")
+
+  if(scale == "plot"){
+    full_on_height <- neon_div_object$div_1m2Data %>%
+      dtplyr::lazy_dt() %>%
+      dplyr::mutate(endDate = as.Date(endDate)) %>%
+      dplyr::filter(divDataType == "plantSpecies") %>%
+      # tidyr::replace_na(list(percentCover=0.5)) %>%
+      dplyr::filter(taxonID != "") %>%
+      dplyr::group_by(plotID, taxonID, eventID) %>%
+      dplyr::summarise(
+        height = mean(heightPlantSpecies, na.rm=TRUE),
+        all_na = all(is.na(heightPlantSpecies))) %>%
+      dplyr::ungroup()  %>%
+      dplyr::group_by(plotID, taxonID, eventID, all_na) %>%
+      dplyr::summarise(height = sum(height)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(site = stringr::str_sub(plotID, 1,4),
+                    subplotID = "plot")%>%
+      dplyr::filter(!all_na) %>%
+      dplyr::select(-all_na) %>%
+      tibble::as_tibble()
+
+    if(timescale == "all") {
+      full_on_height <- full_on_height %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+      year_range <- unique(full_on_height$eventID)%>%
+        as.numeric %>%
+        range %>%
+        paste(collapse = "-")
+      n_years <- length(unique(full_on_height$eventID))
+      full_on_height <- full_on_height %>%
+        dplyr::group_by(plotID, taxonID, site, subplotID) %>%
+        dplyr::summarise(height = mean(height, na.rm=T)) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(eventID = year_range)
+    }
+    if(timescale == "annual") {
+      full_on_height <- full_on_height  %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),
+                        sep = "\\.",remove = F)
+      full_on_height <- full_on_height %>%
+        dplyr::group_by(plotID, taxonID, site, subplotID,eventID) %>%
+        dplyr::summarise(height = max(height, na.rm=T)) %>%
+        dplyr::ungroup()
+    }
+    return(full_on_height)
+  }
+
+  if(scale == "site"){
+    cover <- neon_div_object$div_1m2Data %>%
+      dtplyr::lazy_dt() %>%
+      dplyr::mutate(endDate = as.Date(endDate)) %>%
+      dplyr::filter(divDataType == "plantSpecies") %>%
+      dplyr::filter(taxonID != "") %>%
+      dplyr::group_by(plotID, taxonID, eventID) %>%
+      dplyr::summarise(height = mean(heightPlantSpecies, na.rm=TRUE)) %>%
+      dplyr::ungroup() %>%
+      tibble::as_tibble()
+
+    full_on_height <- cover %>%
+      dtplyr::lazy_dt() %>%
+      dplyr::group_by(plotID, taxonID, eventID) %>%
+      dplyr::summarise(height = mean(height)) %>%
+      dplyr::ungroup()%>%
+      dplyr::mutate(site = stringr::str_sub(plotID, 1,4)) %>%
+      dplyr::group_by(site, taxonID, eventID) %>%
+      dplyr::summarise(height = mean(height, na.rm=T)) %>%
+      dplyr::mutate(subplotID = "site",
+                    plotID = "site") %>%
+      dplyr::ungroup() %>%
+      tibble::as_tibble()
+
+    if(timescale == "all") {
+      full_on_height <- full_on_height  %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+      year_range <- unique(full_on_height$eventID)%>%
+        as.numeric %>%
+        range %>%
+        paste(collapse = "-")
+      full_on_height <- full_on_height %>%
+        dplyr::group_by(plotID, taxonID, site, subplotID) %>%
+        dplyr::summarise(cover = mean(cover, na.rm=T)) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(eventID = year_range)
+    }
+    if(timescale == "annual") {
+      full_on_height <- full_on_height  %>%
+        tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+      full_on_height <- full_on_height %>%
+        dplyr::group_by(plotID, taxonID, site, subplotID,eventID) %>%
+        dplyr::summarise(height = max(height, na.rm=T)) %>%
+        dplyr::ungroup()
+    }
+    return(full_on_height)
+  }
+
+  # cover 8 ===========
+  cover8_1m2 <- neon_div_object$div_1m2Data %>%
+    dtplyr::lazy_dt() %>%
+    dplyr::filter(divDataType == "plantSpecies") %>%
+    dplyr::select(plotID, subplotID, taxonID, eventID, height = heightPlantSpecies) %>%
+    dplyr::filter(taxonID != "") %>%
+    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) %>%
+    dplyr::group_by(plotID, subplotID, taxonID, eventID) %>%
+    dplyr::summarise(height = mean(height)) %>%
+    dplyr::ungroup()%>%
+    dplyr::mutate(site = stringr::str_sub(plotID, 1,4)) %>%
+    tibble::as_tibble()
+
+  cover4 <- cover8_1m2 %>%
+    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1,2)) %>%
+    dplyr::group_by(site, plotID, subplotID, eventID, taxonID) %>%
+    dplyr::summarise(height = mean(height)) %>% # this is summing together repeats from the rbinding
+    dplyr::ungroup()
+
+
+  if(scale == "1m") full_on_height <- cover8_1m2
+  if(scale == "10m") full_on_height <- cover8_1m2 # it's the same
+  if(scale == "100m") full_on_height <- cover4
+
+  if(timescale == "all") {
+    full_on_height <- full_on_height %>%
+      tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+    year_range <- unique(full_on_height$eventID)%>%
+      as.numeric %>%
+      range %>%
+      paste(collapse = "-")
+    full_on_height <- full_on_height %>%
+      dplyr::group_by(plotID, taxonID, site, subplotID) %>%
+      dplyr::summarise(height = mean(height, na.rm=T)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(eventID = year_range)
+  }
+  if(timescale == "annual") {
+    full_on_height <- full_on_height %>%
+      tidyr::separate(eventID, into = c("site_plot", "bout", "eventID"),sep = "\\.",remove = F)
+    full_on_height <- full_on_height %>%
+      dplyr::group_by(plotID, taxonID, site, subplotID,eventID) %>%
+      dplyr::summarise(height = max(height, na.rm=T)) %>%
+      dplyr::ungroup()
+  }
+
+  return(full_on_height)
 }
 #' Create a species abundance or occurrence matrix
 #'
@@ -554,8 +898,8 @@ npe_community_matrix <- function(x,
 #' @param neon_div_object the raw vegan::diversity data downloaded using
 #' neonPlantEcology::download_plant_div() or #' the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
-#' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
-#' which is the default, or "site".
+#' @param scale what level of aggregation? This can be "1m", "10m", "100m",
+#' "plot" or "site". "plot" is the default.
 #' @param trace_cover cover value for subplots where only occupancy was recorded
 #' @param timescale by default npe_diversity_info groups everything by year.
 #' The user may set this argument to "all" to have the function aggregate the years

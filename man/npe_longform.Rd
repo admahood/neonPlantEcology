@@ -8,7 +8,6 @@ npe_longform(
   neon_div_object,
   trace_cover = 0.5,
   scale = "plot",
-  divDataType = "plantSpecies",
   timescale = "annual"
 )
 }
@@ -21,9 +20,6 @@ neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{scale}{what level of aggregation? This can be "1m", "10m", "100m", "plot",
 which is the default, or "site".}
-
-\item{divDataType}{defaults to "plantSpecies", set to "otherVariables" to get
-ground cover (wood, litter, scat etc)}
 }
 \description{
 The diversity data from NEON comes as a list containing 2 data frames of data
