@@ -12,11 +12,14 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+options(rmarkdown.html_vignette.check_title = FALSE)
 ```
 
 ```{r setup}
 library(tidyverse)
 library(neonPlantEcology)
+library(vegan)
+library(sf)
 ```
 
 # Doing a community ecology analysis using `vegan`
@@ -42,13 +45,18 @@ data("D14")
 
 Use `npe_community_matrix` to get the data into the needed format. By default, 
 it aggregates annually to the (20m x 20m) plot scale. Use npe_plot_info to get 
-all of the information from the rownames into a more interpretable format.
+all of the information from the rownames into a more interpretable format. Plot
+centroids, along with additional plot-level metadata, can be loaded with 
+`data("plot_centroids")`.
 
 ```{r wrangle}
 comm <- npe_community_matrix(D14)
 comm[1:4, 1:4]
 
-metadata <- npe_plot_info(comm)
+data("plot_centroids")
+plot_centroids <- st_set_geometry(plot_centroids, NULL)
+metadata <- npe_plot_info(comm) %>%
+  left_join(plot_centroids)
 
 
 ```
@@ -73,16 +81,19 @@ plot(sp_jorn, col = "gold", add=T)
 
 ## NMDS
 
-```{r nmds, fig.width=7.5, fig.height=5}
+```{r nmds, fig.width=7.5, fig.height=6}
 nmds <- metaMDS(comm,trace = F)
 
-sites <- nmds$points %>%
+nmds_sites <- nmds$points %>%
   as_tibble(rownames = "rowname") %>%
   left_join(metadata)
 
-ggplot(sites, aes(x=MDS1, y=MDS2, color = eventID, shape = site)) +
+ggplot(nmds_sites, aes(x=MDS1, y=MDS2, color = eventID, size = elevation, shape = site)) +
   geom_point() +
   theme_classic() +
-  scale_color_brewer(palette = "Dark2")
+  scale_color_brewer(palette = "Set1") +
+  theme(panel.background = element_rect(fill=NA, color= "black"))
 
 ```
+
+
