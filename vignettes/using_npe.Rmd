@@ -113,7 +113,7 @@ dj<- di %>%
             site=site)
 
 p1<-ggplot(dj, aes(x=nspp, y=site, fill = origin)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", color = "black", lwd = .2) +
   xlab("Species Richness") +
   ylab("Site")
 
@@ -131,7 +131,7 @@ p1<-ggplot(dj, aes(x=nspp, y=site, fill = origin)) +
             site=site)
 
 p2<- ggplot(dk, aes(x=relative_cover, y=site, fill = origin)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", color = "black", lwd = .2) +
   xlab("Relative Cover")
 ```
 
@@ -147,7 +147,7 @@ dl <- di%>%
             site=site)
 
 p3<- ggplot(dl, aes(x = shannon, y = site, fill = origin)) +
-  geom_bar(stat = 'identity') +
+  geom_bar(stat = 'identity', color = "black", lwd = .2) +
   xlab("Shannon-Weaver Diveristy")
 
 ```
