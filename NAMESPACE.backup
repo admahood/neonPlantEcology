@@ -1,0 +1,6 @@
+exportPattern("^[[:alpha:]]+")
+importFrom("stats", "family", "na.omit")
+importFrom("utils", "download.file", "unzip")
+import("magrittr")
+import("data.table")
+importFrom("magrittr", "%>%")

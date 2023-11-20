@@ -6,3 +6,5 @@ figs/*
 R/terrestrial_site_summary.R
 data/*
 inst/doc
+/doc/
+/Meta/
