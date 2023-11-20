@@ -172,6 +172,7 @@ ggpubr::ggarrange(p1,
 # Family cover through time using `npe_longform`
 
 ```{r family}
+data("D14")
 lf <- npe_longform(D14, scale = "plot", timescale = "annual")
 
 lf_f <- lf %>%
@@ -182,7 +183,7 @@ lf_f <- lf %>%
   
 ggplot(lf_f, aes(x=eventID, y=cover, fill = family)) +
   geom_boxplot(position="dodge") +
-  facet_wrap(~site, scales = "free") 
+  facet_wrap(~site, scales = "free_x") 
 ```
 
 
