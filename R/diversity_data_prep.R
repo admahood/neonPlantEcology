@@ -156,12 +156,11 @@ npe_longform <- function(neon_div_object,
   requireNamespace("tidyverse")
   requireNamespace("tidyr")
   requireNamespace("stringr")
-  requireNamespace("magrittr")
 
   if(scale == "plot"){
     cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
-      dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "plantSpecies") |>
       tidyr::replace_na(list(percentCover=trace_cover)) |>
@@ -176,7 +175,7 @@ npe_longform <- function(neon_div_object,
 
     traces <- neon_div_object$div_10m2Data100m2Data |>
       dtplyr::lazy_dt() |>
-      dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(targetTaxaPresent == "Y") |>
       dplyr::group_by(plotID, subplotID, taxonID, eventID) |>
@@ -233,7 +232,7 @@ npe_longform <- function(neon_div_object,
   if(scale == "site"){
     cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
-      dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "plantSpecies") |>
       tidyr::replace_na(list(percentCover=trace_cover)) |>
@@ -248,7 +247,7 @@ npe_longform <- function(neon_div_object,
 
     traces <- neon_div_object$div_10m2Data100m2Data |>
       dtplyr::lazy_dt() |>
-      dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(targetTaxaPresent == "Y") |>
       dplyr::group_by(plotID, subplotID, taxonID, eventID) |>
@@ -312,7 +311,7 @@ npe_longform <- function(neon_div_object,
   # cover 8 ===========
   cover8 <- neon_div_object$div_1m2Data |>
     dtplyr::lazy_dt() |>
-    dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
     dplyr::filter(divDataType == "plantSpecies") |>
     tidyr::replace_na(list(percentCover=trace_cover)) |>
     dplyr::select(plotID, subplotID, taxonID, eventID, cover = percentCover,
@@ -329,7 +328,7 @@ npe_longform <- function(neon_div_object,
   # traces8 (10m2) ==============
   traces8 <- neon_div_object$div_10m2Data100m2Data |>
     dtplyr::lazy_dt() |>
-    dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
     dplyr::group_by(plotID, subplotID, taxonID, eventID, scientificName,
                     nativeStatusCode, family) |>
     dplyr::summarise(cover = trace_cover) |>
@@ -346,7 +345,7 @@ npe_longform <- function(neon_div_object,
   # traces100s ========
   traces100s <- neon_div_object$div_10m2Data100m2Data |>
     dtplyr::lazy_dt() |>
-    dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
     dplyr::filter(targetTaxaPresent == "Y") |>
     dplyr::group_by(plotID, subplotID, taxonID, eventID, scientificName,
                     nativeStatusCode, family) |>
@@ -447,7 +446,7 @@ npe_groundcover <- function(neon_div_object,
   if(scale == "plot"){
     full_on_cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
-      dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "otherVariables") |>
       # tidyr::replace_na(list(percentCover=0.5)) |>
@@ -492,7 +491,7 @@ npe_groundcover <- function(neon_div_object,
   if(scale == "site"){
     cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
-      dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "otherVariables") |>
       # tidyr::replace_na(list(percentCover=trace_cover)) |>
@@ -546,7 +545,7 @@ npe_groundcover <- function(neon_div_object,
   # cover 8 ===========
   cover8 <- neon_div_object$div_1m2Data |>
     dtplyr::lazy_dt() |>
-    dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
     dplyr::filter(divDataType == "otherVariables") |>
     # tidyr::replace_na(list(percentCover=trace_cover)) |>
     dplyr::select(plotID, subplotID, otherVariables, eventID, cover = percentCover) |>
@@ -627,7 +626,7 @@ npe_heights <- function(neon_div_object,
   if(scale == "plot"){
     full_on_height <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
-      dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "plantSpecies") |>
       # tidyr::replace_na(list(percentCover=0.5)) |>
@@ -675,7 +674,7 @@ npe_heights <- function(neon_div_object,
   if(scale == "site"){
     cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
-      dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "plantSpecies") |>
       dplyr::filter(taxonID != "") |>
@@ -724,7 +723,7 @@ npe_heights <- function(neon_div_object,
   # cover 8 ===========
   cover8_1m2 <- neon_div_object$div_1m2Data |>
     dtplyr::lazy_dt() |>
-    dplyr::mutate(eventID = str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
     dplyr::filter(divDataType == "plantSpecies") |>
     dplyr::select(plotID, subplotID, taxonID, eventID, height = heightPlantSpecies) |>
     dplyr::filter(taxonID != "") |>
@@ -941,6 +940,7 @@ npe_diversity_info <- function(neon_div_object,
   requireNamespace("dplyr")
   requireNamespace('vegan')
   requireNamespace("magrittr")
+  requireNamespace("stringr")
   # Data wrangling =============================================================
 
   full_on_cover <- npe_longform(neon_div_object,
@@ -1667,6 +1667,6 @@ npe_site_ids <- function(all = FALSE, domain = NA, type = NA){
   if(all) return(sites$siteID)
   if(!is.na(domain[1])) sites <- dplyr::filter(sites, domainNumb %in% domain)
   if(!is.na(type[1])) sites <- dplyr::filter(sites, type %in% siteTYpe)
-  return(sites |> pull(siteID) |> unique() )
+  return(sites |> dplyr::pull(siteID) |> unique() )
 }
 
