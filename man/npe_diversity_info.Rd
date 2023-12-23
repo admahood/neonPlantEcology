@@ -10,8 +10,7 @@ npe_diversity_info(
   trace_cover = 0.5,
   timescale = "annual",
   betadiversity = FALSE,
-  families = NA,
-  spp = NA
+  families = NA
 )
 }
 \arguments{
@@ -40,6 +39,11 @@ This can be a concatenated vector if the user want more than one family.}
 
 \item{species}{Which specific species should the metrics be calculated for?
 This can be a concatenated vector if the user want more than one species.}
+}
+\value{
+a data frame of higher-level summary information. Number of species,
+Shannon-Weaver alpha diversity, cover, relative cover, for all species together
+and grouped by nativeStatusCode.
 }
 \description{
 npe_diversity_info calculates various biodiversity and cover indexes at the

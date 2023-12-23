@@ -18,8 +18,16 @@ neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{trace_cover}{cover value for subplots where only occupancy was recorded}
 
-\item{scale}{what level of aggregation? This can be "1m", "10m", "100m", "plot",
+\item{scale}{what level of spatial aggregation? This can be "1m", "10m", "100m", "plot",
 which is the default, or "site".}
+
+\item{timescale}{what level of temporal aggregation? can be "subannual", which
+is only important for sites with multiple sampling bouts per year,
+"annual" or "all" for the full time series.}
+}
+\value{
+a data frame with each row a single observation of species cover at the
+spatial and temporal scale chosen by the user.
 }
 \description{
 The diversity data from NEON comes as a list containing 2 data frames of data
@@ -30,6 +38,6 @@ has been removed. Column names that remain are plotID, subplotID, year,
 taxonID, cover, scientificName, nativeStatusCode, family, and site.
 }
 \examples{
-# raw_div <- npe_download_plant_div(sites = "SRER")
-# lf_div <- npe_longform(raw_div)
+data("D14")
+lf <- npe_longform(D14)
 }

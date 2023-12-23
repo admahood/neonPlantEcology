@@ -1,31 +1,10 @@
 
-#' Plant diversity data downloader
-#'
-#' A function to download plant diversity data from the NEON API.
-#'
-#' Data comes in two separate components:
-#' 1m2 subplots with cover estimates (first item of the list)
-#' 10 and 100m2 subplots with presence only (second item of the list)
-#' @param sites a vector of NEON site abbreviations. Defaults to "JORN"
-#' @keywords download neon diversity
-#'
-#' @examples
-#' # diversity_object <- download_plant_div(sites = "JORN")
-#' @export
-npe_download_plant_div <- function(sites = "JORN"){
-  requireNamespace("neonUtilities")
-  neonUtilities::loadByProduct(dpID = "DP1.10058.001",
-                site = sites,
-                check.size = F) -> x
-  return(x)
-}
-
-
 #' Data downloader
 #'
 #' A wrapper function to download data from the NEON API. Some commonly used
 #' products are provided as plain language options, otherwise the user
-#' can enter the product ID number (dpID).
+#' can enter the product ID number (dpID). Downloads Plant Presence and Percent
+#' Cover by default (DP1.10058.001).
 #'
 #' @param sites a vector of NEON site abbreviations. Defaults to "JORN"
 #' @param product a plain language vector of the data product to be downloaded.
@@ -37,14 +16,17 @@ npe_download_plant_div <- function(sites = "JORN"){
 #' @keywords download neon diversity
 #'
 #' @examples
-#' # diversity_object <- npe_download(sites = "JORN")
+#' \dontrun{diversity_object <- npe_download(sites = "JORN")}
+#' @returns a list
 #' @export
 npe_download <- function(sites = "JORN",
                          dpID = NA,
                          product = "plant_diversity"){
   requireNamespace("neonUtilities")
 
-  if(!is.na(dpID)){dpID <- dpID}else{
+  if(!is.na(dpID)){
+    dpID <- dpID
+    }else{
     if(product == "plant_diversity") dpID <- "DP1.10058.001"
     if(product == "litterfall") dpID <- "DP1.10033.001"
     if(product == "woody_veg_structure") dpID <- "DP1.10098.001"
@@ -69,7 +51,13 @@ npe_download <- function(sites = "JORN",
 #' some of the latin names
 #'
 #' @param lf_cover the longform cover table created by using
-#' neonPlantEcology::npe_longform().
+#' @returns a data frame
+#'
+#' @examples
+#' data("D14")
+#' npe_longform("D14") |> npe_name_cleaner()
+#'@export
+
 npe_name_cleaner <- function(lf_cover){
   requireNamespace('magrittr')
   requireNamespace('dplyr')
@@ -139,11 +127,16 @@ npe_name_cleaner <- function(lf_cover){
 #' neonPlantEcology::download_plant_div() or the function
 #' neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".
 #' @param trace_cover cover value for subplots where only occupancy was recorded
-#' @param scale what level of aggregation? This can be "1m", "10m", "100m", "plot",
+#' @param scale what level of spatial aggregation? This can be "1m", "10m", "100m", "plot",
 #' which is the default, or "site".
+#' @param timescale what level of temporal aggregation? can be "subannual", which
+#' is only important for sites with multiple sampling bouts per year,
+#' "annual" or "all" for the full time series.
 #' @examples
-#' # raw_div <- npe_download_plant_div(sites = "SRER")
-#' # lf_div <- npe_longform(raw_div)
+#' data("D14")
+#' lf <- npe_longform(D14)
+#' @returns a data frame with each row a single observation of species cover at the
+#' spatial and temporal scale chosen by the user.
 #' @export
 npe_longform <- function(neon_div_object,
                          trace_cover=0.5,
@@ -429,6 +422,8 @@ npe_longform <- function(neon_div_object,
 #' "plot" or "site". default is "plot".
 #' @param timescale The temporal scale of aggregation. Can be "all", "annual" or
 #' "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".
+#' @returns a data frame with each row a single observation of ground cover at the
+#' spatial and temporal scale chosen by the user.
 #' @export
 npe_groundcover <- function(neon_div_object,
                             scale = "plot",
@@ -609,6 +604,8 @@ npe_groundcover <- function(neon_div_object,
 #' "plot" or "site". default is "plot".
 #' @param timescale The temporal scale of aggregation. Can be "all", "annual" or
 #' "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".
+#' @returns a data frame with each row a single observation of species height at the
+#' spatial and temporal scale chosen by the user.
 #' @export
 npe_heights <- function(neon_div_object,
                             scale = "plot",
@@ -793,6 +790,9 @@ npe_heights <- function(neon_div_object,
 #' frame or a divStack output will use the spatial and temporal scale of that
 #' input data
 #' separately
+#' @returns a data frame with each row a site aggregated at the spatial and
+#' temporal scales chosen by the user. Each column is a single species, and cell
+#' values can be either cover (a value between 0 and 100) or occurrence (1 or 0)
 #' @export
 npe_community_matrix <- function(x,
                    scale = "plot",
@@ -928,18 +928,19 @@ npe_community_matrix <- function(x,
 #' @examples
 #' # x <- download_plant_div("SRER")
 #' # plot_level <- neonPlantEcology::npe_diversity_info(neon_div_object = x, scale = "plot")
+#' @returns a data frame of higher-level summary information. Number of species,
+#' Shannon-Weaver alpha diversity, cover, relative cover, for all species together
+#' and grouped by nativeStatusCode.
 #' @export
 npe_diversity_info <- function(neon_div_object,
                                scale = "plot",
                                trace_cover = 0.5,
                                timescale = "annual",
                                betadiversity = FALSE,
-                               families = NA,
-                               spp = NA) {
+                               families = NA) {
   requireNamespace("tidyr")
   requireNamespace("dplyr")
   requireNamespace('vegan')
-  requireNamespace("magrittr")
   requireNamespace("stringr")
   # Data wrangling =============================================================
 
@@ -1147,60 +1148,6 @@ npe_diversity_info <- function(neon_div_object,
                   values_fill = list(nspp = 0))
   }
 
-  # Cover by species ===========================================================
-  if(!is.na(spp)){
-    bysp <- full_on_cover |>
-      dplyr::group_by(site, plotID, subplotID, eventID) |>
-      dplyr::mutate(total_cover = sum(cover)) |>
-      dplyr::ungroup() |>
-      dplyr::group_by(site, plotID, subplotID, eventID, scientificName) |>
-      dplyr::summarise(cover = sum(cover),
-                total_cover = first(total_cover)) |>
-      dplyr::ungroup() |>
-      dplyr::mutate(rel_cover = cover/total_cover) |>
-      dplyr::ungroup() |>
-       dplyr::mutate(gen = stringr::str_split(scientificName,
-                        pattern = " ",
-                        simplify = TRUE)[,1],
-              sp = stringr::str_split(scientificName,
-                                pattern = " ",
-                                simplify = TRUE)[,2],
-              gen_sp = stringr::str_c(gen, " ", sp)) |>
-       dplyr::mutate(genus = stringr::str_split(scientificName,
-                        pattern = " ",
-                        simplify = TRUE)[,1],
-              species = stringr::str_split(scientificName,
-                                pattern = " ",
-                                simplify = TRUE)[,2],
-              gen_sp = stringr::str_c(genus, " ", species)) |>
-      dplyr::filter(gen_sp %in% spp)
-
-    rc_sp <- bysp |>
-      dplyr::select(site, plotID, subplotID,eventID, gen_sp, rel_cover) |>
-      dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_")) |>
-      # the following 3 lines fix some kind of duplicate problem that happened here
-      # need to fix something upstream - jan 14 fixed it, need to test still
-      dplyr::group_by(site, plotID, subplotID,eventID, gen_sp) |>
-      dplyr::summarise(rel_cover = mean(rel_cover)) |>
-      dplyr::ungroup() |>
-      tidyr::pivot_wider(names_from = gen_sp,
-                  names_prefix = "rel_cover_",
-                  values_from = (rel_cover),
-                  values_fill = list(rel_cover = 0))
-
-    c_sp<- bysp |>
-      dplyr::select(site, plotID, subplotID,eventID, gen_sp, cover) |>
-      dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_")) |>
-      # the following 3 lines fix some kind of duplicate problem that happened here
-      # need to fix something upstream - jan 14 fixed it, need to test still
-      dplyr::group_by(site, plotID, subplotID,eventID, gen_sp) |>
-      dplyr::summarise(cover = mean(cover)) |>
-      dplyr::ungroup() |>
-      tidyr::pivot_wider(names_from = gen_sp,
-                  names_prefix = "cover_",
-                  values_from = (cover),
-                  values_fill = list(cover = 0))
-  }
   # by family, divided by biogeographic origin =================================
   if(!is.na(families)){
   family_stuff <- full_on_cover |>
@@ -1446,10 +1393,6 @@ npe_diversity_info <- function(neon_div_object,
     dplyr::left_join(rc_neg, by = c("site", "plotID", "subplotID", "eventID")) |>
     dplyr::left_join(c_neg, by = c("site", "plotID", "subplotID", "eventID")) |>
     dplyr::left_join(nspp_byfam, by = c("site", "plotID", "subplotID", "eventID"))}
-  if(!is.na(spp)){
-    final_table <- final_table |>
-    dplyr::left_join(rc_sp, by = c("site", "plotID", "subplotID", "eventID")) |>
-    dplyr::left_join(c_sp, by = c("site", "plotID", "subplotID", "eventID"))}
 
   # seems crazy, i know... but those NAs should all definitely be zero
   final_table <- final_table |>
@@ -1471,17 +1414,15 @@ npe_diversity_info <- function(neon_div_object,
 #' @param taxon is the taxonID column in the data frame
 #' @param site is the identity of the NEON site (e.g. "JORN")
 #' @param new_code is the NativeStatusCode value to change to
-#'
+#' @returns a data frame
 #' @examples
 #'
-#' # download the NEON plant diversity data for the Jornada Experimental Range
-#' # raw_div<-download_plant_div(sites = "JORN")
-#'
+#' data("D14")
 #' # convert to longform cover
-#' # lf_div <- npe_longform(raw_div)
+#' lf_div <- npe_longform(D14)
 #'
 #' # change all of the unknown Abutilon spp to native
-#' # modified_lf_div <- change_native_status_code(lf_div, "ABUTI", "JORN", "N")
+#' modified_lf_div <- npe_change_native_status_code(lf_div, "ABUTI", "JORN", "N")
 #'
 #' @export
 npe_change_native_status <- function(df, taxon, site, new_code){
@@ -1508,7 +1449,7 @@ npe_change_native_status <- function(df, taxon, site, new_code){
 #'@param dest_dir where to download the files
 #'@param input to what kind of neonPlantEcology product are you appending? Can
 #'be "community_matrix", "longform_cover", or "summary_info".
-#'
+#'@returns a data frame
 #'
 #'@export
 npe_plot_centroids <- function(df,
@@ -1556,6 +1497,10 @@ npe_plot_centroids <- function(df,
 #' very basic metadata back out to a more easily interpretable data frame.
 #'
 #'@param comm the community matrix object created by npe_community_matrix()
+#'@returns a data frame
+#'@examples
+#'data("D14")
+#'npe_community_matrix(D14) |> npe_plot_info()
 #'@export
 npe_plot_info <- function(comm){
   return(comm |>
@@ -1563,90 +1508,6 @@ npe_plot_info <- function(comm){
            tidyr::separate(rowname, into = c("site", "plot", "scale", "eventID"), remove = F) |>
            dplyr::mutate(plotID = stringr::str_c(site, "_", plot)) |>
            dplyr::select(site, plot, scale, eventID, plotID, rowname))
-}
-
-
-#' get cover by species
-#'
-#' This extracts the cover and relative cover of all species into a data frame.
-#' This is basically the same as npe_community_matrix, except the species names
-#' are full, it's in a tibble format, and the plot information is not collapsed
-#' into the row names.
-#' @param neon_div_object a neon diversity object
-#' @param scale the spatial scale at which to aggregate
-#' @param trace_cover what cover value to set presence data to
-#' @param timescale what temporal scale to aggregate to
-#' @export
-# Cover by species ===========================================================
-npe_species <- function(neon_div_object,
-                        scale = "plot",
-                        trace_cover = 0.5,
-                        timescale = "annual") {
-  requireNamespace("tidyr")
-  requireNamespace("dplyr")
-  requireNamespace('vegan')
-  requireNamespace("magrittr")
-  # Data wrangling =============================================================
-
-  full_on_cover <- npe_longform(neon_div_object,
-                                scale = scale,
-                                timescale = timescale)
-
-  template <- full_on_cover |>
-    dplyr::select(site, plotID, subplotID, eventID)
-
-  bysp <- full_on_cover |>
-    dplyr::group_by(site, plotID, subplotID, eventID) |>
-    dplyr::mutate(total_cover = sum(cover)) |>
-    dplyr::ungroup() |>
-    dplyr::group_by(site, plotID, subplotID, eventID, scientificName) |>
-    dplyr::summarise(cover = sum(cover),
-                     total_cover = first(total_cover)) |>
-    dplyr::ungroup() |>
-    dplyr::mutate(rel_cover = cover/total_cover) |>
-    dplyr::ungroup() |>
-    dplyr::mutate(gen = stringr::str_split(scientificName,
-                                           pattern = " ",
-                                           simplify = TRUE)[,1],
-                  sp = stringr::str_split(scientificName,
-                                          pattern = " ",
-                                          simplify = TRUE)[,2],
-                  gen_sp = stringr::str_c(gen, " ", sp)) |>
-    dplyr::mutate(genus = stringr::str_split(scientificName,
-                                             pattern = " ",
-                                             simplify = TRUE)[,1],
-                  species = stringr::str_split(scientificName,
-                                               pattern = " ",
-                                               simplify = TRUE)[,2],
-                  gen_sp = stringr::str_c(genus, " ", species))
-
-  rc_sp <- bysp |>
-    dplyr::select(site, plotID, subplotID,eventID, gen_sp, rel_cover) |>
-    dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_"),
-                  variable = "relative_cover") |>
-    # the following 3 lines fix some kind of duplicate problem that happened here
-    # need to fix something upstream - jan 14 fixed it, need to test still
-    dplyr::group_by(site, plotID, subplotID,eventID, gen_sp) |>
-    dplyr::summarise(rel_cover = mean(rel_cover)) |>
-    dplyr::ungroup() |>
-    tidyr::pivot_wider(names_from = gen_sp,
-                       values_from = (rel_cover),
-                       values_fill = list(rel_cover = 0))
-
-  c_sp<- bysp |>
-    dplyr::select(site, plotID, subplotID,eventID, gen_sp, cover) |>
-    dplyr::mutate(gen_sp = stringr::str_replace(gen_sp, " ","_"),
-                  variable = "absolute_cover") |>
-    # the following 3 lines fix some kind of duplicate problem that happened here
-    # need to fix something upstream - jan 14 fixed it, need to test still
-    dplyr::group_by(site, plotID, subplotID,eventID, gen_sp, variable) |>
-    dplyr::summarise(cover = mean(cover)) |>
-    dplyr::ungroup() |>
-    tidyr::pivot_wider(names_from = gen_sp,
-                       values_from = (cover),
-                       values_fill = list(cover = 0))
-
-  return(list(c_sp, rc_sp))
 }
 
 #' get site ids
@@ -1658,6 +1519,10 @@ npe_species <- function(neon_div_object,
 #' @param domain can be one or more domain codes, as a character vector.
 #' e.g. domain = c("D01", "D14")
 #' @param type can be "Core Terrestrial" or "Relocatable Terrestrial"
+#' @examples
+#' d14_sites <- npe_site_ids(domain = "D14")
+#'
+#' @returns a vector of four letter site identification codes.
 #' @export
 npe_site_ids <- function(all = FALSE, domain = NA, type = NA){
   requireNamespace("tidyr")

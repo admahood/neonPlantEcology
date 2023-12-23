@@ -7,10 +7,16 @@
 npe_name_cleaner(lf_cover)
 }
 \arguments{
-\item{lf_cover}{the longform cover table created by using
-neonPlantEcology::npe_longform().}
+\item{lf_cover}{the longform cover table created by using}
+}
+\value{
+a data frame
 }
 \description{
 This function does some straight forward grep-ing to aggregate to clean up
 some of the latin names
+}
+\examples{
+data("D14")
+npe_longform("D14") |> npe_name_cleaner()
 }

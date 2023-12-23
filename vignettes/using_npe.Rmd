@@ -16,7 +16,10 @@ options(rmarkdown.html_vignette.check_title = FALSE)
 ```
 
 ```{r setup}
-library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
 library(neonPlantEcology)
 library(vegan)
 library(sf)
@@ -35,7 +38,7 @@ the following code, or just call `data("D14")`.
 
 
 ```{r getdata}
-# D14 <- npe_site_ids(domain = "D14") %>%
+# D14 <- npe_site_ids(domain = "D14") |>
 #   npe_download_plant_div(sites = .)
 
 data("D14")
@@ -55,9 +58,9 @@ comm <- npe_community_matrix(D14)
 comm[1:4, 1:4]
 
 data("plot_centroids")
-plot_centroids <- st_set_geometry(plot_centroids, NULL)
-metadata <- npe_plot_info(comm) %>%
-  left_join(plot_centroids)
+plot_centroids <- sf::st_set_geometry(plot_centroids, NULL)
+metadata <- npe_plot_info(comm) |>
+  dplyr::left_join(plot_centroids)
 
 
 ```
@@ -67,11 +70,10 @@ metadata <- npe_plot_info(comm) %>%
 first we'll do a species accumulation curve for each site.
 
 ```{r sac}
-library(vegan)
 
 # checking the metadata file to see where JORN stops and SRER begins
-which(metadata$site == "JORN") %>% range()
-which(metadata$site == "SRER") %>% range()
+which(metadata$site == "JORN") |> range()
+which(metadata$site == "SRER") |> range()
 
 # performing and plotting the species accumulation curve analysis
 sp_jorn <- vegan::specaccum(comm[1:152,])
@@ -85,8 +87,8 @@ plot(sp_jorn, col = "gold", add=T)
 ```{r nmds, fig.width=7.5, fig.height=6}
 nmds <- metaMDS(comm,trace = F)
 
-nmds_sites <- nmds$points %>%
-  as_tibble(rownames = "rowname") %>%
+nmds_sites <- nmds$points |>
+  as_tibble(rownames = "rowname") |>
   left_join(metadata)
 
 ggplot(nmds_sites, aes(x=MDS1, y=MDS2, color = eventID, size = elevation, shape = site)) +
@@ -104,11 +106,11 @@ ggplot(nmds_sites, aes(x=MDS1, y=MDS2, color = eventID, size = elevation, shape 
 ```{r nspp}
 di <- npe_diversity_info(D14, scale = "site", timescale = "all")
 
-dj<- di %>%
-  dplyr::select(site, eventID, starts_with("nspp")) %>%
-  pivot_longer(cols = starts_with("nspp")) %>%
-  filter(!name %in% c("nspp_notexotic", "nspp_total")) %>%
-  transmute(origin = str_remove_all(name, "nspp_"),
+dj<- di |>
+  dplyr::select(site, eventID, starts_with("nspp")) |>
+  tidyr::pivot_longer(cols = starts_with("nspp")) |>
+  dplyr::filter(!name %in% c("nspp_notexotic", "nspp_total")) |>
+  dplyr::transmute(origin = str_remove_all(name, "nspp_"),
             nspp = value,
             site=site)
 
@@ -122,10 +124,10 @@ p1<-ggplot(dj, aes(x=nspp, y=site, fill = origin)) +
 ## Relative cover by biogeographical origin
 
 ```{r rc}
- dk<- di %>%
-  dplyr::select(site, eventID, starts_with("rel_cover")) %>%
-  pivot_longer(cols = starts_with("rel_cover")) %>%
-  filter(!name %in% c("rel_cover_notexotic", "rel_cover_total")) %>%
+ dk<- di |>
+  dplyr::select(site, eventID, starts_with("rel_cover")) |>
+  pivot_longer(cols = starts_with("rel_cover")) |>
+  filter(!name %in% c("rel_cover_notexotic", "rel_cover_total")) |>
   transmute(origin = str_remove_all(name, "rel_cover_"),
             relative_cover = value,
             site=site)
@@ -138,10 +140,10 @@ p2<- ggplot(dk, aes(x=relative_cover, y=site, fill = origin)) +
 ## Alpha biogeographical diversity
 
 ```{r alphabeta}
-dl <- di%>%
-  dplyr::select(site, eventID, starts_with("shannon")) %>%
-  pivot_longer(cols = starts_with("shannon")) %>%
-  filter(!name %in% c("shannon_notexotic", "shannon_total", "shannon_family")) %>%
+dl <- di|>
+  dplyr::select(site, eventID, starts_with("shannon")) |>
+  pivot_longer(cols = starts_with("shannon")) |>
+  filter(!name %in% c("shannon_notexotic", "shannon_total", "shannon_family")) |>
   transmute(origin = str_remove_all(name, "shannon_"),
             shannon = value,
             site=site)
@@ -175,10 +177,10 @@ ggpubr::ggarrange(p1,
 data("D14")
 lf <- npe_longform(D14, scale = "plot", timescale = "annual")
 
-lf_f <- lf %>%
-  mutate(family = ifelse(!family %in% c("Poaceae", "Fabaceae"), "Other", family)) %>%
-  group_by(site, plotID, eventID, family) %>%
-  summarise(cover = sum(cover, na.rm=T)) %>%
+lf_f <- lf |>
+  mutate(family = ifelse(!family %in% c("Poaceae", "Fabaceae"), "Other", family)) |>
+  group_by(site, plotID, eventID, family) |>
+  summarise(cover = sum(cover, na.rm=T)) |>
   ungroup()
   
 ggplot(lf_f, aes(x=eventID, y=cover, fill = family)) +

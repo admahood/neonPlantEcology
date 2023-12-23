@@ -15,6 +15,9 @@ npe_change_native_status(df, taxon, site, new_code)
 
 \item{new_code}{is the NativeStatusCode value to change to}
 }
+\value{
+a data frame
+}
 \description{
 Sometimes even though a particular species identity is not known, the end
 user can still determine its native status. For example, maybe the taxon
@@ -24,13 +27,11 @@ allows for post-hoc modification of the native status code for cases like this.
 }
 \examples{
 
-# download the NEON plant diversity data for the Jornada Experimental Range
-# raw_div<-download_plant_div(sites = "JORN")
-
+data("D14")
 # convert to longform cover
-# lf_div <- npe_longform(raw_div)
+lf_div <- npe_longform(D14)
 
 # change all of the unknown Abutilon spp to native
-# modified_lf_div <- change_native_status_code(lf_div, "ABUTI", "JORN", "N")
+modified_lf_div <- npe_change_native_status_code(lf_div, "ABUTI", "JORN", "N")
 
 }

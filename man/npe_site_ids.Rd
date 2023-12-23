@@ -14,7 +14,14 @@ e.g. domain = c("D01", "D14")}
 
 \item{type}{can be "Core Terrestrial" or "Relocatable Terrestrial"}
 }
+\value{
+a vector of four letter site identification codes.
+}
 \description{
 This uses the site boundary shapefile (obtainable by data('sites')) to get a
 list of siteID codes to feed into npe_download.
+}
+\examples{
+d14_sites <- npe_site_ids(domain = "D14")
+
 }

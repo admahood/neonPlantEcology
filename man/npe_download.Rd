@@ -17,13 +17,17 @@ Can be "plant_diversity", "litterfall", "woody_veg_structure",
 "belowground_biomass", "herbaceous_clip", "coarse_downed_wood",
 or "soil_microbe_biomass"}
 }
+\value{
+a list
+}
 \description{
 A wrapper function to download data from the NEON API. Some commonly used
 products are provided as plain language options, otherwise the user
-can enter the product ID number (dpID).
+can enter the product ID number (dpID). Downloads Plant Presence and Percent
+Cover by default (DP1.10058.001).
 }
 \examples{
-# diversity_object <- npe_download(sites = "JORN")
+\dontrun{diversity_object <- npe_download(sites = "JORN")}
 }
 \keyword{diversity}
 \keyword{download}

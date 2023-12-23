@@ -9,10 +9,17 @@ npe_plot_info(comm)
 \arguments{
 \item{comm}{the community matrix object created by npe_community_matrix()}
 }
+\value{
+a data frame
+}
 \description{
 The npe_community_matrix() function is designed to work with the vegan
 package, and one of the requirements of vegan functions is that there are
 only numeric columns in community matrices. Therefore, all of the metatdata
 is collapsed into the rownames. This function allows you to extract that
 very basic metadata back out to a more easily interpretable data frame.
+}
+\examples{
+data("D14")
+npe_community_matrix(D14) |> npe_plot_info()
 }

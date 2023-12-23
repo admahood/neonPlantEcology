@@ -28,6 +28,9 @@ the ancillary variables.}
 \item{input}{to what kind of neonPlantEcology product are you appending? Can
 be "community_matrix", "longform_cover", or "summary_info".}
 }
+\value{
+a data frame
+}
 \description{
 Download and join spatial information to a neonPlantEcology output data frame
 }

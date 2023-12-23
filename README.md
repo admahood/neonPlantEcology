@@ -8,7 +8,13 @@ This package contains scripts for processing plant species cover and occurrence 
 
 ## Installation Instructions
 
+#### development version
+
 `devtools::install_github("admahood/neonPlantEcology")`
+
+#### cran version
+
+`install.packages("neonPlantEcology")`
 
 ## Use
 

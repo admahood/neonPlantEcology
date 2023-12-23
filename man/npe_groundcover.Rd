@@ -17,6 +17,10 @@ neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 \item{timescale}{The temporal scale of aggregation. Can be "all", "annual" or
 "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".}
 }
+\value{
+a data frame with each row a single observation of ground cover at the
+spatial and temporal scale chosen by the user.
+}
 \description{
 Get ground cover and other variables
 }

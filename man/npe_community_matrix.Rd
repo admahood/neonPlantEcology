@@ -40,6 +40,11 @@ separately}
 neonPlantEcology::download_plant_div() or the function
 neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 }
+\value{
+a data frame with each row a site aggregated at the spatial and
+temporal scales chosen by the user. Each column is a single species, and cell
+values can be either cover (a value between 0 and 100) or occurrence (1 or 0)
+}
 \description{
 npe_community_matrix creates a wide matrix of species cover or binary (presence/absence)
 values with the plot/subplot/year as rownames. This is useful for the vegan
