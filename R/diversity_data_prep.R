@@ -41,75 +41,6 @@ npe_download <- function(sites = "JORN",
   return(x)
 }
 
-############################################################
-# npe_name_cleaner tries to fix as many typos, etc as possible #
-############################################################
-
-#' Clean scientific names
-#'
-#' This function does some straight forward grep-ing to aggregate to clean up
-#' some of the latin names
-#'
-#' @param lf_cover the longform cover table created by using
-#' @returns a data frame
-#'
-#' @examples
-#' data("D14")
-#' npe_longform("D14") |> npe_name_cleaner()
-#'@export
-
-npe_name_cleaner <- function(lf_cover){
-  requireNamespace('magrittr')
-  requireNamespace('dplyr')
-  all_sp=sort(unique(lf_cover$scientificName))
-
-  species_names=tolower(all_sp)
-
-
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\(l.\\).+$",replacement = "\\1")
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+-\\w+) \\(l.\\).+$",replacement = "\\1")
-
-  species_names=gsub(x = species_names,pattern = "^(\\w+ \\w+) \\(.+\\).*$",replacement = "\\1")
-
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+-\\w+) l.$",replacement = "\\1")
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) l\\..*$",replacement = "\\1")
-
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+ ssp.*",replacement = "\\1")
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+ var.*",replacement = "\\1")
-
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+\\. ssp.*",replacement = "\\1")
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+\\. var.*",replacement = "\\1")
-
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+$",replacement = "\\1")
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) \\w+\\.$",replacement = "\\1")
-
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+) .*",replacement = "\\1")
-  species_names=gsub(x = species_names,pattern = "(^\\w+ \\w+-\\w+) .*",replacement = "\\1")
-
-  species_names=gsub(x = species_names,pattern = "(^\\w+ ×\\w+-\\w+).*$",replacement = "\\1")
-  species_names=gsub(x = species_names,pattern = "(^\\w+ ×\\w+).*$",replacement = "\\1")
-
-
-  species_names=gsub(x = species_names,pattern = "(^\\w+ )\\w+/\\w+$",replacement = "\\1sp.")
-  species_names<-gsub(x = species_names,pattern = "^\\w+ \\w+/.+$",replacement = "unknown plant")
-
-  species_names <- str_to_sentence(species_names)
-
-  lut_sn <- all_sp
-  names(lut_sn) <- species_names
-
-  return(
-    lf_cover |>
-      dplyr::mutate(scientificName = lut_sn[scientificName])
-    )
-
-
-}
-
-#######################################################################
-# npe_longform creates a long dataframe for cover from the neon #
-# diversity object (used in all of the following functions)           #
-#######################################################################
 
 #' Convert raw NEON diversity object to longform plant cover data frame
 #'
@@ -422,6 +353,9 @@ npe_longform <- function(neon_div_object,
 #' "plot" or "site". default is "plot".
 #' @param timescale The temporal scale of aggregation. Can be "all", "annual" or
 #' "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".
+#' @examples
+#' data("D14")
+#' heights <- npe_groundcover(D14)
 #' @returns a data frame with each row a single observation of ground cover at the
 #' spatial and temporal scale chosen by the user.
 #' @export
@@ -436,7 +370,6 @@ npe_groundcover <- function(neon_div_object,
   requireNamespace("tidyverse")
   requireNamespace("tidyr")
   requireNamespace("stringr")
-  requireNamespace("magrittr")
 
   if(scale == "plot"){
     full_on_cover <- neon_div_object$div_1m2Data |>
@@ -618,7 +551,6 @@ npe_heights <- function(neon_div_object,
   requireNamespace("tidyverse")
   requireNamespace("tidyr")
   requireNamespace("stringr")
-  requireNamespace("magrittr")
 
   if(scale == "plot"){
     full_on_height <- neon_div_object$div_1m2Data |>
@@ -788,8 +720,11 @@ npe_heights <- function(neon_div_object,
 #' Another option is input = "divStack", which is using the output from the
 #' divStack function in the neonPlants package. Using a premade longform data
 #' frame or a divStack output will use the spatial and temporal scale of that
-#' input data
-#' separately
+#' input data separately
+#' @examples
+#' data("D14")
+#' heights <- npe_heights(D14)
+#'
 #' @returns a data frame with each row a site aggregated at the spatial and
 #' temporal scales chosen by the user. Each column is a single species, and cell
 #' values can be either cover (a value between 0 and 100) or occurrence (1 or 0)
@@ -803,7 +738,6 @@ npe_community_matrix <- function(x,
   requireNamespace("tidyr")
   requireNamespace("dplyr")
   requireNamespace("tibble")
-  requireNamespace("magrittr")
 
   if(input == "divStack"){
 
@@ -923,8 +857,6 @@ npe_community_matrix <- function(x,
 #' plots.
 #' @param families Which specific families should the metrics be calculated for?
 #' This can be a concatenated vector if the user want more than one family.
-#' @param species Which specific species should the metrics be calculated for?
-#' This can be a concatenated vector if the user want more than one species.
 #' @examples
 #' # x <- download_plant_div("SRER")
 #' # plot_level <- neonPlantEcology::npe_diversity_info(neon_div_object = x, scale = "plot")
@@ -1422,7 +1354,7 @@ npe_diversity_info <- function(neon_div_object,
 #' lf_div <- npe_longform(D14)
 #'
 #' # change all of the unknown Abutilon spp to native
-#' modified_lf_div <- npe_change_native_status_code(lf_div, "ABUTI", "JORN", "N")
+#' modified_lf_div <- npe_change_native_status(lf_div, "ABUTI", "JORN", "N")
 #'
 #' @export
 npe_change_native_status <- function(df, taxon, site, new_code){
@@ -1503,6 +1435,10 @@ npe_plot_centroids <- function(df,
 #'npe_community_matrix(D14) |> npe_plot_info()
 #'@export
 npe_plot_info <- function(comm){
+  requireNamespace("dplyr")
+  requireNamespace("tibble")
+  requireNamespace("tidyr")
+  requireNamespace("stringr")
   return(comm |>
            tibble::rownames_to_column("rowname") |>
            tidyr::separate(rowname, into = c("site", "plot", "scale", "eventID"), remove = F) |>
@@ -1520,18 +1456,18 @@ npe_plot_info <- function(comm){
 #' e.g. domain = c("D01", "D14")
 #' @param type can be "Core Terrestrial" or "Relocatable Terrestrial"
 #' @examples
-#' d14_sites <- npe_site_ids(domain = "D14")
+#' all_sites <- npe_site_ids()
 #'
 #' @returns a vector of four letter site identification codes.
 #' @export
 npe_site_ids <- function(all = FALSE, domain = NA, type = NA){
-  requireNamespace("tidyr")
   requireNamespace("dplyr")
-  requireNamespace("magrittr")
   data("sites")
   if(all) return(sites$siteID)
   if(!is.na(domain[1])) sites <- dplyr::filter(sites, domainNumb %in% domain)
   if(!is.na(type[1])) sites <- dplyr::filter(sites, type %in% siteTYpe)
-  return(sites |> dplyr::pull(siteID) |> unique() )
+  return(sites |> dplyr::pull(siteID) |> unique())
 }
+
+
 

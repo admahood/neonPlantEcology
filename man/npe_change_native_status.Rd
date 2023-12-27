@@ -32,6 +32,6 @@ data("D14")
 lf_div <- npe_longform(D14)
 
 # change all of the unknown Abutilon spp to native
-modified_lf_div <- npe_change_native_status_code(lf_div, "ABUTI", "JORN", "N")
+modified_lf_div <- npe_change_native_status(lf_div, "ABUTI", "JORN", "N")
 
 }

@@ -31,8 +31,7 @@ to use a longform data frame that was created separately (and perhaps modified).
 Another option is input = "divStack", which is using the output from the
 divStack function in the neonPlants package. Using a premade longform data
 frame or a divStack output will use the spatial and temporal scale of that
-input data
-separately}
+input data separately}
 
 \item{binary}{should the matrix be converted from percent cover to binary?}
 
@@ -49,4 +48,9 @@ values can be either cover (a value between 0 and 100) or occurrence (1 or 0)
 npe_community_matrix creates a wide matrix of species cover or binary (presence/absence)
 values with the plot/subplot/year as rownames. This is useful for the vegan
 package, hence the name.
+}
+\examples{
+data("D14")
+heights <- npe_heights(D14)
+
 }

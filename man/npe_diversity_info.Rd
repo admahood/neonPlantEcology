@@ -36,9 +36,6 @@ plots.}
 
 \item{families}{Which specific families should the metrics be calculated for?
 This can be a concatenated vector if the user want more than one family.}
-
-\item{species}{Which specific species should the metrics be calculated for?
-This can be a concatenated vector if the user want more than one species.}
 }
 \value{
 a data frame of higher-level summary information. Number of species,

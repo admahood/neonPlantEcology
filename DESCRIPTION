@@ -1,6 +1,6 @@
 Package: neonPlantEcology
 Type: Package
-Title: A package to process NEON's Plant Presence and Percent Cover data for use in ecological analysis
+Title: A package to process the National Ecological Observatory Network's Plant Presence and Percent Cover data for use in ecological analysis
 Version: 1.2.0
 Date: 2020-06-15
 DOI: 10.5281/zenodo.3908692
@@ -9,7 +9,7 @@ Authors@R: c(
   person("Jacob", "Macdonald", role = "ctb"), 
   person("Ranjan", "Muthukrishnan", role = "ctb"))
 Maintainer: Adam Mahood <admahood@gmail.com>
-Description: This package contains functions for downloading and organizing Plant Presence and Percent Cover data from NEON (www.neonscience.org)
+Description: This package contains functions for downloading and organizing Plant Presence and Percent Cover data from the National Ecological Observatory Netowrk.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -29,3 +29,5 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+URL: https://github.com/admahood/neonPlantEcology
+BugReports: https://github.com/admahood/neonPlantEcology/issues

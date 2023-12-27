@@ -22,6 +22,6 @@ This uses the site boundary shapefile (obtainable by data('sites')) to get a
 list of siteID codes to feed into npe_download.
 }
 \examples{
-d14_sites <- npe_site_ids(domain = "D14")
+all_sites <- npe_site_ids()
 
 }

@@ -20,7 +20,7 @@ This package contains scripts for processing plant species cover and occurrence 
 
 ### npe_download
 
-First, download some data using the `download_plant_div` function. It defaults to download the diversity data for the Santa Rita Experimental Range in Domain 14 in Arizona. The `sites` arguement in this function is used to specify which site (or sites) you wish to download. A list of field sites can be found [here](https://www.neonscience.org/field-sites/field-sites-map/list).
+First, download some data using the `download_plant_div` function. It defaults to download the diversity data for the Santa Rita Experimental Range in Domain 14 in Arizona. The `sites` arguement in this function is used to specify which site (or sites) you wish to download. A list of field sites can be found [here](https://www.neonscience.org/field-sites/explore-field-sites).
 
 `sites <- npe_download_plant_div(sites = c("SRER", "JORN")`
 

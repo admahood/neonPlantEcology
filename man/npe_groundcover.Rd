@@ -24,3 +24,7 @@ spatial and temporal scale chosen by the user.
 \description{
 Get ground cover and other variables
 }
+\examples{
+data("D14")
+heights <- npe_groundcover(D14)
+}
