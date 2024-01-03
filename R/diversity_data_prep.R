@@ -77,7 +77,6 @@ npe_longform <- function(neon_div_object,
   requireNamespace("data.table")
   requireNamespace("dplyr")
   requireNamespace("dtplyr")
-  requireNamespace("tidyverse")
   requireNamespace("tidyr")
   requireNamespace("stringr")
 
@@ -367,7 +366,6 @@ npe_groundcover <- function(neon_div_object,
   requireNamespace("data.table")
   requireNamespace("dplyr")
   requireNamespace("dtplyr")
-  requireNamespace("tidyverse")
   requireNamespace("tidyr")
   requireNamespace("stringr")
 
@@ -548,7 +546,6 @@ npe_heights <- function(neon_div_object,
   requireNamespace("data.table")
   requireNamespace("dplyr")
   requireNamespace("dtplyr")
-  requireNamespace("tidyverse")
   requireNamespace("tidyr")
   requireNamespace("stringr")
 
@@ -1432,9 +1429,9 @@ npe_plot_centroids <- function(df,
 #'@returns a data frame
 #'@examples
 #'data("D14")
-#'npe_community_matrix(D14) |> npe_plot_info()
+#'npe_community_matrix(D14) |> npe_cm_metadata()
 #'@export
-npe_plot_info <- function(comm){
+npe_cm_metadata <- function(comm){
   requireNamespace("dplyr")
   requireNamespace("tibble")
   requireNamespace("tidyr")
@@ -1451,39 +1448,48 @@ npe_plot_info <- function(comm){
 #' This uses the site boundary shapefile (obtainable by data('sites')) to get a
 #' list of siteID codes to feed into npe_download.
 #'
+#' @param by which variable to select sites by. Can be "domain", "ai", "koppen", or "type".
+#' Defaults to NA, which directs the function to return all site codes.
 #' @param domain can be one or more domain codes, as a character vector, or as a number.
 #' e.g. domain = c("D01", "D14"), or domain = c(3, 14), can also be a mix: domain = c(3, "D04).
 #' @param type can be "Core Terrestrial" or "Relocatable Terrestrial"
+#' @param aridity can be "Hyper-Arid", "Arid", "Dry sub-humid", or "Humid"
+#' @param koppen can be any 3 letter Koppen-Geiger code, or one of "Equatorial", "Arid", "Temperate", "Boreal", "Polar"
 #' @examples
 #'
 #' # if no domains or site types are specified, it returns all site codes
 #' all_sites <- npe_site_ids()
-#' npe_site_ids(domain = c("Northeast", "Mid-Atlantic"))
-#' npe_site_ids(domain = c("D02", 15))
+#' npe_site_ids(by = "domain", domain = c("Northeast", "Mid-Atlantic"))
+#' npe_site_ids(by = "domain", domain = c("D02", 15))
 #'
 #' @returns a vector of four letter site identification codes.
 #' @export
-npe_site_ids <- function(domain = NA, type = NA){
+npe_site_ids <- function(by = NA, domain = NA, type = NA, aridity=NA, koppen=NA){
   requireNamespace("dplyr")
   requireNamespace("stringr")
   data("sites")
   # all
-  if(is.na(domain[1]) & is.na(type[1])) return(unique(sites$siteID))
+  if(is.na(by)) return(unique(sites$siteID))
 
-  # fixing common typos in domain argument
-  if(any(is.numeric(domain))) domain <-
-    stringr::str_c("D", stringr::str_pad(domain, width = 2, side = "left", pad = "0"))
-  if(any(is.character(domain)) & any(nchar(domain) < 3)) domain <-
-    stringr::str_remove_all(domain, "D") |>
-    stringr::str_pad(width = 2, side = "left", pad = "0") |>
-    stringr::str_c("D", pattern = _)
-  if(any(is.character(domain)) & any(nchar(domain) > 3)){
-    sites <- dplyr::filter(sites, domainName %in% domain)
-    return(sites |> dplyr::pull(siteID) |> unique())
+  if(by == "domain"){
+    # fixing common typos in domain argument
+    if(any(is.numeric(domain))) domain <-
+      stringr::str_c("D", stringr::str_pad(domain, width = 2, side = "left", pad = "0"))
+    if(any(is.character(domain)) & any(nchar(domain) < 3)) domain <-
+      stringr::str_remove_all(domain, "D") |>
+      stringr::str_pad(width = 2, side = "left", pad = "0") |>
+      stringr::str_c("D", pattern = _)
+    if(any(is.character(domain)) & any(nchar(domain) > 3)){
+      sites <- dplyr::filter(sites, domainName %in% domain)
+      return(sites |> dplyr::pull(siteID) |> unique())
+    }
+    if(!is.na(domain[1])) sites <- dplyr::filter(sites, domainNumb %in% domain)
   }
 
-  if(!is.na(domain[1])) sites <- dplyr::filter(sites, domainNumb %in% domain)
-  if(!is.na(type[1])) sites <- dplyr::filter(sites, type %in% siteType)
+  if(by == "type") sites <- dplyr::filter(sites, siteType %in% type)
+  if(by == "aridity") sites <- dplyr::filter(sites, ai_class %in% aridity)
+  if(by == "koppen" & nchar(koppen) > 3) sites <- dplyr::filter(sites, koppen_coarse %in% koppen)
+  if(by == "koppen" & nchar(koppen) == 3) sites <- dplyr::filter(sites, koppen_fine %in% koppen)
   return(sites |> dplyr::pull(siteID) |> unique())
 }
 

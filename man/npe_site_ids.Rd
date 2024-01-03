@@ -4,13 +4,20 @@
 \alias{npe_site_ids}
 \title{get site ids}
 \usage{
-npe_site_ids(domain = NA, type = NA)
+npe_site_ids(by = NA, domain = NA, type = NA, aridity = NA, koppen = NA)
 }
 \arguments{
+\item{by}{which variable to select sites by. Can be "domain", "ai", "koppen", or "type".
+Defaults to NA, which directs the function to return all site codes.}
+
 \item{domain}{can be one or more domain codes, as a character vector, or as a number.
 e.g. domain = c("D01", "D14"), or domain = c(3, 14), can also be a mix: domain = c(3, "D04).}
 
 \item{type}{can be "Core Terrestrial" or "Relocatable Terrestrial"}
+
+\item{aridity}{can be "Hyper-Arid", "Arid", "Dry sub-humid", or "Humid"}
+
+\item{koppen}{can be any 3 letter Koppen-Geiger code, or one of "Equatorial", "Arid", "Temperate", "Boreal", "Polar"}
 }
 \value{
 a vector of four letter site identification codes.
@@ -23,7 +30,7 @@ list of siteID codes to feed into npe_download.
 
 # if no domains or site types are specified, it returns all site codes
 all_sites <- npe_site_ids()
-npe_site_ids(domain = c("Northeast", "Mid-Atlantic"))
-npe_site_ids(domain = c("D02", 15))
+npe_site_ids(by = "domain", domain = c("Northeast", "Mid-Atlantic"))
+npe_site_ids(by = "domain", domain = c("D02", 15))
 
 }

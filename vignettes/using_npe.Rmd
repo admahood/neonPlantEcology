@@ -48,7 +48,7 @@ data("D14")
 ## Wrangle the data
 
 Use `npe_community_matrix` to get the data into the needed format. By default, 
-it aggregates annually to the (20m x 20m) plot scale. Use npe_plot_info to get 
+it aggregates annually to the (20m x 20m) plot scale. Use npe_cm_metadata to get 
 all of the information from the rownames into a more interpretable format. Plot
 centroids, along with additional plot-level metadata, can be loaded with 
 `data("plot_centroids")`.
@@ -59,7 +59,7 @@ comm[1:4, 1:4]
 
 data("plot_centroids")
 plot_centroids <- sf::st_set_geometry(plot_centroids, NULL)
-metadata <- npe_plot_info(comm) |>
+metadata <- npe_cm_metadata(comm) |>
   dplyr::left_join(plot_centroids)
 
 

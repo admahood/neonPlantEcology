@@ -23,7 +23,7 @@
 #' Note: Some sites have more than one polygon. There are 59 polygons and 47 total sites.
 #'
 #' @format ## 'sites'
-#' data frame with 59 features and 7 fields
+#' data frame with 59 features and 12 fields
 #' \describe{
 #'  \item{domainNumb}{Domain Number}
 #'  \item{domainName}{Domain Name}
@@ -33,8 +33,14 @@
 #'  \item{siteHost}{Organization hosting the site}
 #'  \item{areaKm2}{Area of the site in square kilometers}
 #'  \item{acres}{Area of the site in acres}
+#'  \item{koppen_fine}{Koppen-Geiger climate classification from Beck et al 2023}
+#'  \item{koppen_coarse}{Coarsest category of K-G climate classification from Beck et al 2023}
+#'  \item{ai}{Annual aridity index from Zomer & Trabucco 2022}
+#'  \item{ai_class}{Climate classification based on the aridity index from Zomer & Trabucco 2022}
 #' }
 #' @source <https://www.neonscience.org>
+#' @source <https://doi.org/10.6084/m9.figshare.7504448.v5>
+#' @source <https://doi.org/10.1038/s41597-023–02549‑6>
 "sites"
 
 

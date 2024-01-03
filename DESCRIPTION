@@ -1,7 +1,7 @@
 Package: neonPlantEcology
 Type: Package
 Title: A Package to Process the National Ecological Observatory Network's Plant Presence and Percent Cover Data for Use in Ecological Analysis
-Version: 1.2.4
+Version: 1.2.5
 Date: 2024-01-03
 DOI: 10.5281/zenodo.3908692
 Authors@R: c(
@@ -9,13 +9,13 @@ Authors@R: c(
   person("Jacob", "Macdonald", role = "ctb"), 
   person("Ranjan", "Muthukrishnan", role = "ctb"))
 Maintainer: Adam Mahood <admahood@gmail.com>
-Description: This package contains functions for downloading and organizing Plant Presence and Percent Cover data from the National Ecological Observatory Network.
+Description: Functions for downloading and organizing Plant Presence and Percent Cover data from the National Ecological Observatory Network.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports: neonUtilities,
          vegan,
-         tidyverse,
+         ggplot2,
          data.table,
          dtplyr,
          dplyr,
