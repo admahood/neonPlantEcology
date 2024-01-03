@@ -1451,21 +1451,39 @@ npe_plot_info <- function(comm){
 #' This uses the site boundary shapefile (obtainable by data('sites')) to get a
 #' list of siteID codes to feed into npe_download.
 #'
-#' @param all if TRUE, returns a vector of all siteID codes
-#' @param domain can be one or more domain codes, as a character vector.
-#' e.g. domain = c("D01", "D14")
+#' @param domain can be one or more domain codes, as a character vector, or as a number.
+#' e.g. domain = c("D01", "D14"), or domain = c(3, 14), can also be a mix: domain = c(3, "D04).
 #' @param type can be "Core Terrestrial" or "Relocatable Terrestrial"
 #' @examples
+#'
+#' # if no domains or site types are specified, it returns all site codes
 #' all_sites <- npe_site_ids()
+#' npe_site_ids(domain = c("Northeast", "Mid-Atlantic"))
+#' npe_site_ids(domain = c("D02", 15))
 #'
 #' @returns a vector of four letter site identification codes.
 #' @export
-npe_site_ids <- function(all = FALSE, domain = NA, type = NA){
+npe_site_ids <- function(domain = NA, type = NA){
   requireNamespace("dplyr")
+  requireNamespace("stringr")
   data("sites")
-  if(all) return(sites$siteID)
+  # all
+  if(is.na(domain[1]) & is.na(type[1])) return(unique(sites$siteID))
+
+  # fixing common typos in domain argument
+  if(any(is.numeric(domain))) domain <-
+    stringr::str_c("D", stringr::str_pad(domain, width = 2, side = "left", pad = "0"))
+  if(any(is.character(domain)) & any(nchar(domain) < 3)) domain <-
+    stringr::str_remove_all(domain, "D") |>
+    stringr::str_pad(width = 2, side = "left", pad = "0") |>
+    stringr::str_c("D", pattern = _)
+  if(any(is.character(domain)) & any(nchar(domain) > 3)){
+    sites <- dplyr::filter(sites, domainName %in% domain)
+    return(sites |> dplyr::pull(siteID) |> unique())
+  }
+
   if(!is.na(domain[1])) sites <- dplyr::filter(sites, domainNumb %in% domain)
-  if(!is.na(type[1])) sites <- dplyr::filter(sites, type %in% siteTYpe)
+  if(!is.na(type[1])) sites <- dplyr::filter(sites, type %in% siteType)
   return(sites |> dplyr::pull(siteID) |> unique())
 }
 

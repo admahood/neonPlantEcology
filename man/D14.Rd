@@ -9,7 +9,9 @@
 A list with 8 items, 2 of which are used by neonPlantEcology
 }
 \source{
-<https://www.neonscience.org>
+<https://doi.org/10.48443/9579-a253>
+
+<https://data.neonscience.org/data-products/DP1.10058.001/RELEASE-2023>
 }
 \usage{
 D14

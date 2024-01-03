@@ -185,7 +185,12 @@ lf_f <- lf |>
   
 ggplot(lf_f, aes(x=eventID, y=cover, fill = family)) +
   geom_boxplot(position="dodge") +
-  facet_wrap(~site, scales = "free_x") 
+  facet_wrap(~site, scales = "free_x") +
+  theme_bw() +
+  scale_fill_brewer(palette = "Set1", name = "Family") +
+  ylab("Cover") +
+  xlab("eventID (Annual Timestep)")
+
 ```
 
 

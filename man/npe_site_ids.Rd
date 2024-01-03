@@ -4,13 +4,11 @@
 \alias{npe_site_ids}
 \title{get site ids}
 \usage{
-npe_site_ids(all = FALSE, domain = NA, type = NA)
+npe_site_ids(domain = NA, type = NA)
 }
 \arguments{
-\item{all}{if TRUE, returns a vector of all siteID codes}
-
-\item{domain}{can be one or more domain codes, as a character vector.
-e.g. domain = c("D01", "D14")}
+\item{domain}{can be one or more domain codes, as a character vector, or as a number.
+e.g. domain = c("D01", "D14"), or domain = c(3, 14), can also be a mix: domain = c(3, "D04).}
 
 \item{type}{can be "Core Terrestrial" or "Relocatable Terrestrial"}
 }
@@ -22,6 +20,10 @@ This uses the site boundary shapefile (obtainable by data('sites')) to get a
 list of siteID codes to feed into npe_download.
 }
 \examples{
+
+# if no domains or site types are specified, it returns all site codes
 all_sites <- npe_site_ids()
+npe_site_ids(domain = c("Northeast", "Mid-Atlantic"))
+npe_site_ids(domain = c("D02", 15))
 
 }
