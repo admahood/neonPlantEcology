@@ -41,6 +41,46 @@ npe_download <- function(sites = "JORN",
   return(x)
 }
 
+#' Change subplot names
+#'
+#' The 2024 release features a change in subplot names. This function changes
+#' subplot names of the Plant Presence and Percent Cover raw list object
+#' from the old format to the new format, to ensure backwards
+#' compatibility. This is mostly an internal helper function
+#'
+#' @examples
+#' data("D14")
+#' D14_updated <- npe_update_subplots(D14)
+#' @param neon_div_object a list downloaded using npe_download containing Plant Presence and Percent Cover data
+#' @returns a
+#' @export
+npe_update_subplots <- function(neon_div_object){
+  requireNamespace("stringr")
+  lut_subplots <- c( "40_1_1", "40_1_3", "31_1_1", "31_1_4", "41_1_4", "41_1_1",
+                     "32_1_2", "32_1_4",
+                     "40_100",  "41_100", "31_100", "32_100",
+                     "40_10_1", "40_10_3", "41_10_1", "41_10_4",
+                     "31_10_1","31_10_4", "32_10_2", "32_10_4",
+                     "40_1_1", "40_1_3", "31_1_1", "31_1_4", "41_1_4", "41_1_1",
+                     "32_1_2", "32_1_4",
+                     "40_100",  "41_100", "31_100", "32_100",
+                     "40_10_1", "40_10_3", "41_10_1", "41_10_4",
+                     "31_10_1","31_10_4", "32_10_2", "32_10_4")
+  names(lut_subplots) <- c("40.1.1", "40.3.1", "31.1.1", "31.4.1", "41.4.1", "41.1.1",
+                "32.2.1", "32.4.1",
+                "40", "41", "31", "32",
+                "40.1.10", "40.3.10","41.1.10","41.4.10",
+                "31.1.10","31.4.10","32.2.10","32.4.10",
+                "40_1_1", "40_1_3", "31_1_1", "31_1_4", "41_1_4", "41_1_1",
+                "32_1_2", "32_1_4",
+                "40_100",  "41_100", "31_100", "32_100",
+                "40_10_1", "40_10_3", "41_10_1", "41_10_4",
+                "31_10_1","31_10_4", "32_10_2", "32_10_4")
+  neon_div_object$div_1m2Data$subplotID <- lut_subplots[neon_div_object$div_1m2Data$subplotID]
+  neon_div_object$div_10m2Data100m2Data$subplotID <- lut_subplots[neon_div_object$div_10m2Data100m2Data$subplotID]
+  return(neon_div_object)
+}
+
 
 #' Convert raw NEON diversity object to longform plant cover data frame
 #'
@@ -80,11 +120,14 @@ npe_longform <- function(neon_div_object,
   requireNamespace("tidyr")
   requireNamespace("stringr")
 
+  neon_div_object <- npe_update_subplots(neon_div_object)
+
   if(scale == "plot"){
     cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
       dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
-      dplyr::mutate(endDate = as.Date(endDate)) |>
+      dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
+      # dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "plantSpecies") |>
       tidyr::replace_na(list(percentCover=trace_cover)) |>
       dplyr::filter(taxonID != "") |>
@@ -98,11 +141,13 @@ npe_longform <- function(neon_div_object,
 
     traces <- neon_div_object$div_10m2Data100m2Data |>
       dtplyr::lazy_dt() |>
-      dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(targetTaxaPresent == "Y") |>
       dplyr::group_by(plotID, subplotID, taxonID, eventID) |>
       dplyr::summarise(cover = trace_cover,
+                      # endDate = first(endDate),
                        scientificName = first(scientificName),
                        nativeStatusCode = first(nativeStatusCode),
                        family = first(family)) |>
@@ -112,6 +157,7 @@ npe_longform <- function(neon_div_object,
       dplyr::summarise(cover = sum(cover, na.rm=TRUE)/ifelse(as.numeric(stringr::str_sub(eventID,8,11))< 2019, 8,6),
                        nativeStatusCode = first(nativeStatusCode),
                        scientificName = first(scientificName),
+                      # endDate = first(endDate),
                        family = first(family)) |>
       dplyr::ungroup() |>
       tibble::as_tibble()
@@ -156,6 +202,7 @@ npe_longform <- function(neon_div_object,
     cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
       dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "plantSpecies") |>
       tidyr::replace_na(list(percentCover=trace_cover)) |>
@@ -171,6 +218,7 @@ npe_longform <- function(neon_div_object,
     traces <- neon_div_object$div_10m2Data100m2Data |>
       dtplyr::lazy_dt() |>
       dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(targetTaxaPresent == "Y") |>
       dplyr::group_by(plotID, subplotID, taxonID, eventID) |>
@@ -235,12 +283,14 @@ npe_longform <- function(neon_div_object,
   cover8 <- neon_div_object$div_1m2Data |>
     dtplyr::lazy_dt() |>
     dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
     dplyr::filter(divDataType == "plantSpecies") |>
     tidyr::replace_na(list(percentCover=trace_cover)) |>
     dplyr::select(plotID, subplotID, taxonID, eventID, cover = percentCover,
                   nativeStatusCode, scientificName, family) |>
     dplyr::filter(taxonID != "") |>
-    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) |>
+    dplyr::mutate(subplotID = stringr::str_c(stringr::str_sub(subplotID, 1, 2),
+                                             stringr::str_sub(subplotID, 5, 6))) |>
     tidyr::replace_na(list(family = "Unknown")) |>
     tibble::as_tibble()
 
@@ -252,16 +302,14 @@ npe_longform <- function(neon_div_object,
   traces8 <- neon_div_object$div_10m2Data100m2Data |>
     dtplyr::lazy_dt() |>
     dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
     dplyr::group_by(plotID, subplotID, taxonID, eventID, scientificName,
                     nativeStatusCode, family) |>
     dplyr::summarise(cover = trace_cover) |>
     dplyr::ungroup() |>
     dplyr::filter(taxonID != "",
-                  subplotID != "31", # these are the 100m2 subplots under which two 1m2 and 10m2 pairs are nested
-                  subplotID != "32",
-                  subplotID != "40",
-                  subplotID != "41")  |>
-    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) |>
+                  !str_detect(subplotID, "_100"))  |> # these are the 100m2 subplots under which two 1m2 and 10m2 pairs are nested
+    dplyr::mutate(subplotID = stringr::str_remove_all(subplotID, "_10")) |>
     tidyr::replace_na(list(family = "Unknown")) |>
     tibble::as_tibble()
 
@@ -269,6 +317,7 @@ npe_longform <- function(neon_div_object,
   traces100s <- neon_div_object$div_10m2Data100m2Data |>
     dtplyr::lazy_dt() |>
     dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
     dplyr::filter(targetTaxaPresent == "Y") |>
     dplyr::group_by(plotID, subplotID, taxonID, eventID, scientificName,
                     nativeStatusCode, family) |>
@@ -276,10 +325,8 @@ npe_longform <- function(neon_div_object,
     dplyr::ungroup() |>
     dplyr::mutate(site = stringr::str_sub(plotID, 1,4)) |>
     dplyr::filter(taxonID != "",
-                  subplotID == "31"| # these are the 100m2 subplots under which two 1m2 and 10m2 pairs are nested
-                    subplotID == "32"|
-                    subplotID == "40"|
-                    subplotID == "41") |>
+                  str_detect(subplotID, "_100"))  |>
+    dplyr::mutate(subplotID = stringr::str_remove_all(subplotID, "_100")) |>
     tidyr::replace_na(list(family = "Unknown")) |>
     tibble::as_tibble()
 
@@ -369,10 +416,13 @@ npe_groundcover <- function(neon_div_object,
   requireNamespace("tidyr")
   requireNamespace("stringr")
 
+  neon_div_object <- npe_update_subplots(neon_div_object)
+
   if(scale == "plot"){
     full_on_cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
       dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "otherVariables") |>
       # tidyr::replace_na(list(percentCover=0.5)) |>
@@ -418,6 +468,7 @@ npe_groundcover <- function(neon_div_object,
     cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
       dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "otherVariables") |>
       # tidyr::replace_na(list(percentCover=trace_cover)) |>
@@ -472,11 +523,13 @@ npe_groundcover <- function(neon_div_object,
   cover8 <- neon_div_object$div_1m2Data |>
     dtplyr::lazy_dt() |>
     dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
     dplyr::filter(divDataType == "otherVariables") |>
     # tidyr::replace_na(list(percentCover=trace_cover)) |>
     dplyr::select(plotID, subplotID, otherVariables, eventID, cover = percentCover) |>
     dplyr::filter(otherVariables != "") |>
-    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) |>
+    dplyr::mutate(subplotID = stringr::str_c(stringr::str_sub(subplotID, 1, 2),
+                                             stringr::str_sub(subplotID, 5, 6))) |>
     tibble::as_tibble()
 
     # aggregating at different spatial scales ------------------------------------
@@ -548,11 +601,13 @@ npe_heights <- function(neon_div_object,
   requireNamespace("dtplyr")
   requireNamespace("tidyr")
   requireNamespace("stringr")
+  neon_div_object <- npe_update_subplots(neon_div_object)
 
   if(scale == "plot"){
     full_on_height <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
       dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "plantSpecies") |>
       # tidyr::replace_na(list(percentCover=0.5)) |>
@@ -601,6 +656,7 @@ npe_heights <- function(neon_div_object,
     cover <- neon_div_object$div_1m2Data |>
       dtplyr::lazy_dt() |>
       dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
       dplyr::mutate(endDate = as.Date(endDate)) |>
       dplyr::filter(divDataType == "plantSpecies") |>
       dplyr::filter(taxonID != "") |>
@@ -650,10 +706,12 @@ npe_heights <- function(neon_div_object,
   cover8_1m2 <- neon_div_object$div_1m2Data |>
     dtplyr::lazy_dt() |>
     dplyr::mutate(eventID =stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+    dplyr::mutate(eventID = stringr::str_replace_all(eventID, "JORN022", "JORN.1.2022")) |>
     dplyr::filter(divDataType == "plantSpecies") |>
     dplyr::select(plotID, subplotID, taxonID, eventID, height = heightPlantSpecies) |>
     dplyr::filter(taxonID != "") |>
-    dplyr::mutate(subplotID = stringr::str_sub(subplotID, 1, 4)) |>
+    dplyr::mutate(subplotID = stringr::str_c(stringr::str_sub(subplotID, 1, 2),
+                                             stringr::str_sub(subplotID, 5, 6))) |>
     dplyr::group_by(plotID, subplotID, taxonID, eventID) |>
     dplyr::summarise(height = mean(height)) |>
     dplyr::ungroup() |>
@@ -792,7 +850,8 @@ npe_community_matrix <- function(x,
 
   if(input == "neon_div_object"){
     longform_df <- x |>
-     npe_longform(scale = scale, trace_cover = trace_cover,
+     npe_longform(scale = scale,
+                  trace_cover = trace_cover,
                   timescale = timescale)
   }
 

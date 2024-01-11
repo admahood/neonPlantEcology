@@ -51,8 +51,18 @@
 #' @format ## 'D14'
 #' A list with 8 items, 2 of which are used by neonPlantEcology
 #' @source <https://doi.org/10.48443/9579-a253>
-#' @source <https://data.neonscience.org/data-products/DP1.10058.001/RELEASE-2023>
+#' @source <https://data.neonscience.org/data-products/DP1.10058.001>
 "D14"
+
+#' Plant Presence and Percent Cover Data for Domain 14 (old release)
+#'
+#' This includes Jornada Experimental Range and Santa Rita Experimental Range
+#'
+#' @format ## 'D14'
+#' A list with 8 items, 2 of which are used by neonPlantEcology
+#' @source <https://doi.org/10.48443/9579-a253>
+#' @source <https://data.neonscience.org/data-products/DP1.10058.001/RELEASE-2023>
+"D14_release23"
 
 #' Plot centroids for the entire NEON network
 #'
