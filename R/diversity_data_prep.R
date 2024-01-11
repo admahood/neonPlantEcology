@@ -23,7 +23,7 @@ npe_download <- function(sites = "JORN",
                          dpID = NA,
                          product = "plant_diversity"){
   requireNamespace("neonUtilities")
-
+  print(stringr::str_c("downloading the following sites:"));print(sites)
   if(!is.na(dpID)){
     dpID <- dpID
     }else{
@@ -1528,7 +1528,9 @@ npe_site_ids <- function(by = NA, domain = NA, type = NA, aridity=NA, koppen=NA)
   requireNamespace("stringr")
   data("sites")
   # all
-  if(is.na(by)) return(unique(sites$siteID))
+  if(is.na(by))return( print("please specify using the 'by' argument (e.g. by = 'domain')"))
+
+  if(by == "all") return(unique(sites$siteID))
 
   if(by == "domain"){
     # fixing common typos in domain argument
