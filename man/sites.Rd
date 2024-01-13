@@ -6,16 +6,12 @@
 \title{National Ecological Observatory Network Core and Relocatable Terrestrial Sites}
 \format{
 ## 'sites'
-data frame with 59 features and 12 fields
+data frame with 47 features and 8 fields
 \describe{
  \item{domainNumb}{Domain Number}
  \item{domainName}{Domain Name}
  \item{siteType}{Site type. Core or Relocatable}
- \item{siteName}{Site name}
  \item{siteID}{Four letter site ID. Used in npe_download()}
- \item{siteHost}{Organization hosting the site}
- \item{areaKm2}{Area of the site in square kilometers}
- \item{acres}{Area of the site in acres}
  \item{koppen_fine}{Koppen-Geiger climate classification from Beck et al 2023}
  \item{koppen_coarse}{Coarsest category of K-G climate classification from Beck et al 2023}
  \item{ai}{Annual aridity index from Zomer & Trabucco 2022}

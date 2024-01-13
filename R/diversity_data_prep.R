@@ -81,6 +81,57 @@ npe_update_subplots <- function(neon_div_object){
   return(neon_div_object)
 }
 
+#' fix NAs in the eventID column
+#'
+#' neonPlantEcology is a house of cards that rests delicately upon the eventID
+#' column being in the site.bout-number.year format, and if there is any deviation
+#' from that format all hell breaks loose. This function massages any non-standard
+#' eventID rows to the desired format.
+#'
+#' @param x raw list data from NEON api
+#' @returns the same list object but with repaired eventIDs
+#' @export
+npe_eventID_na_fixer <- function(x){
+  requireNamespace("stringr")
+  requireNamespace("dplyr")
+
+  all_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
+
+  if(any(is.na(all_event_ids))){
+    n <- sum(is.na(all_event_ids))
+    # how many bouts are there?
+    bouts <- x$div_1m2Data |>
+      dplyr::filter(!is.na(eventID)) |>
+      dplyr::pull(eventID) |>
+      unique() |>
+      stringr::str_split_i("\\.", 2) |>
+      unique()
+    if(length(bouts)==1){
+      x$div_1m2Data <-
+        x$div_1m2Data |>
+        dplyr::mutate(eventID = ifelse(
+          is.na(eventID),
+           stringr::str_c(siteID, "\\.",
+                                   "1", "\\.",
+                                   stringr::str_sub(endDate,1,4)),
+                      eventID)
+               )
+      x$div_10m2Data100m2Data <-
+        x$div_10m2Data100m2Data |>
+        dplyr::mutate(eventID = ifelse(
+          is.na(eventID),
+          stringr::str_c(siteID, "\\.",
+                         "1", "\\.",
+                         stringr::str_sub(endDate,1,4)),
+          eventID)
+        )
+
+    }
+      print(paste(n, "rows were fixed in the eventID column"))
+
+  }else{print("No NA's in eventID column");return(x)}
+
+}
 
 #' Convert raw NEON diversity object to longform plant cover data frame
 #'
@@ -120,7 +171,8 @@ npe_longform <- function(neon_div_object,
   requireNamespace("tidyr")
   requireNamespace("stringr")
 
-  neon_div_object <- npe_update_subplots(neon_div_object)
+  neon_div_object <- npe_update_subplots(neon_div_object) |>
+    npe_eventID_na_fixer()
 
   if(scale == "plot"){
     cover <- neon_div_object$div_1m2Data |>
@@ -416,7 +468,8 @@ npe_groundcover <- function(neon_div_object,
   requireNamespace("tidyr")
   requireNamespace("stringr")
 
-  neon_div_object <- npe_update_subplots(neon_div_object)
+  neon_div_object <- npe_update_subplots(neon_div_object) |>
+    npe_eventID_na_fixer()
 
   if(scale == "plot"){
     full_on_cover <- neon_div_object$div_1m2Data |>
@@ -601,7 +654,9 @@ npe_heights <- function(neon_div_object,
   requireNamespace("dtplyr")
   requireNamespace("tidyr")
   requireNamespace("stringr")
-  neon_div_object <- npe_update_subplots(neon_div_object)
+
+  neon_div_object <- npe_update_subplots(neon_div_object) |>
+    npe_eventID_na_fixer()
 
   if(scale == "plot"){
     full_on_height <- neon_div_object$div_1m2Data |>
@@ -1526,7 +1581,16 @@ npe_cm_metadata <- function(comm){
 npe_site_ids <- function(by = NA, domain = NA, type = NA, aridity=NA, koppen=NA){
   requireNamespace("dplyr")
   requireNamespace("stringr")
-  data("sites")
+  sites <- data.frame(
+    "ai_class" = c('Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Dry sub-humid', 'Dry sub-humid', 'Humid', 'Humid', 'Humid', 'Dry sub-humid', 'Dry sub-humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Arid', 'Arid', 'Arid', 'Arid', 'Humid', 'Humid', 'Semi-Arid', 'Semi-Arid', 'Dry sub-humid', 'Dry sub-humid', 'Semi-Arid', 'Dry sub-humid', 'Semi-Arid', 'Humid', 'Humid'),
+    "koppen_coarsei" = c('Boreal', 'Boreal', 'Boreal', 'Boreal', 'Temperate', 'Temperate', 'Temperate', 'Temperate', 'Equatorial', 'Equatorial', 'Boreal', 'Boreal', 'Boreal', 'Boreal', 'Boreal', 'Boreal', 'Temperate', 'Temperate', 'Boreal', 'Temperate', 'Temperate', 'Temperate', 'Boreal', 'Boreal', 'Boreal', 'Arid', 'Boreal', 'Arid', 'Temperate', 'Temperate', 'Boreal', 'Boreal', 'Arid', 'Arid', 'Arid', 'Arid', 'Temperate', 'Temperate', 'Temperate', 'Temperate', 'Boreal', 'Boreal', 'Polar', 'Boreal', 'Boreal', 'Boreal', 'Temperate'),
+    "koppen_fine" = c('Dfb', 'Dfb', 'Dfa', 'Dfa', 'Cfa', 'Cfa', 'Cfa', 'Cfa', 'Aw', 'Aw', 'Dfb', 'Dfb', 'Dfb', 'Dfa', 'Dfa', 'Dfa', 'Cfa', 'Cfa', 'Dfb', 'Cfa', 'Cfa', 'Cfa', 'Dwb', 'Dwb', 'Dwa', 'BSk', 'Dfc', 'BSk', 'Cfa', 'Cfa', 'Dfb', 'Dfc', 'BSk', 'BSh', 'BWk', 'BSk', 'Csb', 'Csb', 'Csa', 'Csa', 'Dsb', 'Dfc', 'ET', 'Dfc', 'Dfc', 'Dfc', 'Cfb'),
+    "siteID" = c('HARV', 'BART', 'SCBI', 'BLAN', 'SERC', 'OSBS', 'DSNY', 'JERC', 'GUAN', 'LAJA', 'UNDE', 'STEI', 'TREE', 'KONZ', 'KONA', 'UKFS', 'ORNL', 'GRSM', 'MLBS', 'TALL', 'DELA', 'LENO', 'WOOD', 'DCFS', 'NOGP', 'CPER', 'RMNP', 'STER', 'CLBJ', 'OAES', 'YELL', 'NIWO', 'MOAB', 'SRER', 'JORN', 'ONAQ', 'WREF', 'ABBY', 'SJER', 'SOAP', 'TEAK', 'TOOL', 'BARR', 'BONA', 'DEJU', 'HEAL', 'PUUM'),
+    "siteType" = c('Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial'),
+    "domainName" = c('Northeast', 'Northeast', 'Mid-Atlantic', 'Mid-Atlantic', 'Mid-Atlantic', 'Southeast', 'Southeast', 'Southeast', 'Atlantic Neotropical', 'Atlantic Neotropical', 'Great Lakes', 'Great Lakes', 'Great Lakes', 'Prairie Peninsula', 'Prairie Peninsula', 'Prairie Peninsula', 'Appalachian & Cumberland Plateau', 'Appalachian & Cumberland Plateau', 'Appalachian & Cumberland Plateau', 'Ozarks Complex', 'Ozarks Complex', 'Ozarks Complex', 'Northern Plains', 'Northern Plains', 'Northern Plains', 'Central Plains', 'Central Plains', 'Central Plains', 'Southern Plains', 'Southern Plains', 'Northern Rockies', 'Southern Rockies & Colorado Plateau', 'Southern Rockies & Colorado Plateau', 'Desert Southwest', 'Desert Southwest', 'Great Basin', 'Pacific Northwest', 'Pacific Northwest', 'Pacific Southwest', 'Pacific Southwest', 'Pacific Southwest', 'Tundra', 'Tundra', 'Taiga', 'Taiga', 'Taiga', 'Pacific Tropical'),
+    "domainNumb" = c('D01', 'D01', 'D02', 'D02', 'D02', 'D03', 'D03', 'D03', 'D04', 'D04', 'D05', 'D05', 'D05', 'D06', 'D06', 'D06', 'D07', 'D07', 'D07', 'D08', 'D08', 'D08', 'D09', 'D09', 'D09', 'D10', 'D10', 'D10', 'D11', 'D11', 'D12', 'D13', 'D13', 'D14', 'D14', 'D15', 'D16', 'D16', 'D17', 'D17', 'D17', 'D18', 'D18', 'D19', 'D19', 'D19', 'D20'),
+    "ai" = c(1.08410927596454, 1.31410357142857, 0.849784615384615, 0.787831148191798, 0.811638850336408, 0.790833333333333, 0.684451515151515, 0.828816666666667, 0.51492, 0.551633333333333, 0.95566, 0.913493179783889, 0.884850566524963, 0.575726923076923, 0.5695, 0.683575, 0.953840740740741, 1.19839423076923, 0.924217583681487, 0.973891549295775, 0.908614285714286, 0.983518201965764, 0.366794117647059, 0.379916806861188, 0.334770263282546, 0.212731313131313, 0.354683044307244, 0.249034848629603, 0.46629375, 0.354155555555556, 0.453812389380531, 0.48867619047619, 0.175980519480519, 0.175426116838488, 0.116921666666667, 0.176280769230769, 1.9526, 2.280268, 0.249885185185185, 0.42392, 0.500568055555556, 0.54825251396648, 0.467794827586207, 0.500236438942441, 0.46619512195122, 0.709120512820513, 1.909385)
+    )
   # all
   if(is.na(by))return( print("please specify using the 'by' argument (e.g. by = 'domain')"))
 
@@ -1553,6 +1617,4 @@ npe_site_ids <- function(by = NA, domain = NA, type = NA, aridity=NA, koppen=NA)
   if(by == "koppen" & nchar(koppen) == 3) sites <- dplyr::filter(sites, koppen_fine %in% koppen)
   return(sites |> dplyr::pull(siteID) |> unique())
 }
-
-
 

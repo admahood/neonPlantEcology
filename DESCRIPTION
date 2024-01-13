@@ -1,9 +1,8 @@
 Package: neonPlantEcology
 Type: Package
 Title: A Package to Process the National Ecological Observatory Network's Plant Presence and Percent Cover Data for Use in Ecological Analysis
-Version: 1.3.1
+Version: 1.3.2
 Date: 2024-01-03
-DOI: 10.5281/zenodo.3908692
 Authors@R: c(
   person("Adam", "Mahood", email = "admahood@gmail.com",role = c("aut", "cre")),
   person("Jacob", "Macdonald", role = "ctb"), 
@@ -23,7 +22,8 @@ Imports: neonUtilities,
          stringr,
          tibble,
          tidyr,
-         ggpubr
+         ggpubr,
+         utils
 RoxygenNote: 7.2.3
 Suggests: 
     knitr,
