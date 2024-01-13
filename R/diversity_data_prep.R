@@ -1,7 +1,8 @@
 
 #' Data downloader
 #'
-#' A wrapper function to download data from the NEON API. Some commonly used
+#' A wrapper function to download data from the NEON API using neonUtilities::loadByProduct.
+#' Some commonly used
 #' products are provided as plain language options, otherwise the user
 #' can enter the product ID number (dpID). Downloads Plant Presence and Percent
 #' Cover by default (DP1.10058.001).
@@ -11,7 +12,9 @@
 #' Can be "plant_diversity", "litterfall", "woody_veg_structure",
 #' "belowground_biomass", "herbaceous_clip", "coarse_downed_wood",
 #' or "soil_microbe_biomass"
+#' @param token a token from neonscience.org
 #' @param dpID if you need a data product not given as one of the product
+#' @param ... additional arguments can be passed to neonUtilities::loadByProduct
 #' options, set the data product ID here (e.g. "DP1.10023.001").
 #' @keywords download neon diversity
 #'
@@ -21,7 +24,8 @@
 #' @export
 npe_download <- function(sites = "JORN",
                          dpID = NA,
-                         product = "plant_diversity"){
+                         token = NA,
+                         product = "plant_diversity", ...){
   requireNamespace("neonUtilities")
   print(stringr::str_c("downloading the following sites:"));print(sites)
   if(!is.na(dpID)){
@@ -37,7 +41,9 @@ npe_download <- function(sites = "JORN",
   }
   neonUtilities::loadByProduct(dpID = dpID,
                                site = sites,
-                               check.size = F) -> x
+                               token = token,
+                               check.size = F,
+                               ...) -> x
   return(x)
 }
 

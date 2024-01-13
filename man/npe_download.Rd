@@ -4,24 +4,35 @@
 \alias{npe_download}
 \title{Data downloader}
 \usage{
-npe_download(sites = "JORN", dpID = NA, product = "plant_diversity")
+npe_download(
+  sites = "JORN",
+  dpID = NA,
+  token = NA,
+  product = "plant_diversity",
+  ...
+)
 }
 \arguments{
 \item{sites}{a vector of NEON site abbreviations. Defaults to "JORN"}
 
-\item{dpID}{if you need a data product not given as one of the product
-options, set the data product ID here (e.g. "DP1.10023.001").}
+\item{dpID}{if you need a data product not given as one of the product}
+
+\item{token}{a token from neonscience.org}
 
 \item{product}{a plain language vector of the data product to be downloaded.
 Can be "plant_diversity", "litterfall", "woody_veg_structure",
 "belowground_biomass", "herbaceous_clip", "coarse_downed_wood",
 or "soil_microbe_biomass"}
+
+\item{...}{additional arguments can be passed to neonUtilities::loadByProduct
+options, set the data product ID here (e.g. "DP1.10023.001").}
 }
 \value{
 a list
 }
 \description{
-A wrapper function to download data from the NEON API. Some commonly used
+A wrapper function to download data from the NEON API using neonUtilities::loadByProduct.
+Some commonly used
 products are provided as plain language options, otherwise the user
 can enter the product ID number (dpID). Downloads Plant Presence and Percent
 Cover by default (DP1.10058.001).
