@@ -9,7 +9,7 @@ ignore_unused_imports <- function(){
 }
 
 # solving the note on global variables (a symptom of using dplyr a lot)
-utils::globalVariables(c("nativeStatusCode", "taxonID", "rowname", "site",
+utils::globalVariables(c("nativeStatusCode", "taxonID", "rowname", "site", "lut",
                          "eventID", "plotID", "subplotID", "targetTaxaPresent",
                          "present", "na.omit", "p_sp_y", "cover", "total_cover",
                          "rel_cover", "contains", "family", "scientificName",

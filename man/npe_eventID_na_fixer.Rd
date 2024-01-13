@@ -2,7 +2,7 @@
 % Please edit documentation in R/diversity_data_prep.R
 \name{npe_eventID_na_fixer}
 \alias{npe_eventID_na_fixer}
-\title{fix NAs in the eventID column}
+\title{fix errors in the eventID column}
 \usage{
 npe_eventID_na_fixer(x)
 }
@@ -15,6 +15,6 @@ the same list object but with repaired eventIDs
 \description{
 neonPlantEcology is a house of cards that rests delicately upon the eventID
 column being in the site.bout-number.year format, and if there is any deviation
-from that format all hell breaks loose. This function massages any non-standard
+from that format all hell breaks loose. This function converts any NA or non-standard
 eventID rows to the desired format.
 }

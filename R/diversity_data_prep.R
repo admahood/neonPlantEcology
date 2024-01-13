@@ -81,11 +81,11 @@ npe_update_subplots <- function(neon_div_object){
   return(neon_div_object)
 }
 
-#' fix NAs in the eventID column
+#' fix errors in the eventID column
 #'
 #' neonPlantEcology is a house of cards that rests delicately upon the eventID
 #' column being in the site.bout-number.year format, and if there is any deviation
-#' from that format all hell breaks loose. This function massages any non-standard
+#' from that format all hell breaks loose. This function converts any NA or non-standard
 #' eventID rows to the desired format.
 #'
 #' @param x raw list data from NEON api
@@ -96,10 +96,28 @@ npe_eventID_na_fixer <- function(x){
   requireNamespace("dplyr")
 
   all_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
+  print(paste("The following eventID entries will be fixed, hopefully:"))
+  print(paste(all_event_ids[nchar(all_event_ids) != 11] |> unique()))
 
-  if(any(is.na(all_event_ids))){
-    n <- sum(is.na(all_event_ids))
-    # how many bouts are there?
+  if(any(is.na(all_event_ids)) || any(nchar(all_event_ids) != 11)){
+    nas <- sum(is.na(all_event_ids))
+    non_standards <- sum(nchar(all_event_ids[!is.na(all_event_ids)]) != 11)
+
+    eids <- dplyr::bind_rows(x$div_1m2Data  |>
+      dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
+      dplyr::select(endDate, eventID, siteID),
+      x$div_10m2Data100m2Data  |>
+      dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+      dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
+      dplyr::select(endDate, eventID, siteID)) |>
+      unique() |>
+      dplyr::mutate(lut = paste0(siteID, endDate))
+
+    lut_eid <- eids$eventID
+    names(lut_eid) <- eids$lut
+
+    # how many bouts are there? if there is only 1 bout, it's easy
     bouts <- x$div_1m2Data |>
       dplyr::filter(!is.na(eventID)) |>
       dplyr::pull(eventID) |>
@@ -109,25 +127,40 @@ npe_eventID_na_fixer <- function(x){
     if(length(bouts)==1){
       x$div_1m2Data <-
         x$div_1m2Data |>
-        dplyr::mutate(eventID = ifelse(
-          is.na(eventID),
-           stringr::str_c(siteID, "\\.",
-                                   "1", "\\.",
-                                   stringr::str_sub(endDate,1,4)),
-                      eventID)
+        dplyr::mutate(eventID = ifelse(is.na(eventID),
+           stringr::str_c(siteID, "\\.", "1", "\\.", stringr::str_sub(endDate,1,4)),
+           eventID)
                )
       x$div_10m2Data100m2Data <-
         x$div_10m2Data100m2Data |>
-        dplyr::mutate(eventID = ifelse(
-          is.na(eventID),
-          stringr::str_c(siteID, "\\.",
-                         "1", "\\.",
-                         stringr::str_sub(endDate,1,4)),
+        dplyr::mutate(eventID = ifelse(is.na(eventID),
+          stringr::str_c(siteID, "\\.", "1", "\\.", stringr::str_sub(endDate,1,4)),
           eventID)
         )
+     return(x)
+    }else{ # more than one bout
+      x$div_10m2Data100m2Data <-
+        x$div_10m2Data100m2Data |>
+        dplyr::mutate(lut = paste0(siteID, endDate),
+          eventID = ifelse(
+          is.na(eventID) | nchar(eventID) != 11,
+          lut_eid[lut],
+          eventID))
+      x$div_1m2Data <-
+        x$div_1m2Data |>
+        dplyr::mutate(lut = paste0(siteID, endDate),
+                      eventID = ifelse(
+                        is.na(eventID) | nchar(eventID) != 11,
+                        lut_eid[lut],
+                        eventID))
+      updated_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
 
-    }
-      print(paste(n, "rows were fixed in the eventID column"))
+      print(paste(nas, "to", sum(is.na(updated_event_ids)), "NAs"))
+      print(paste(non_standards, "to", sum(nchar(updated_event_ids[!is.na(updated_event_ids)]) != 11), "non-standards"))
+
+      }
+      print(paste(sum(nas, non_standards), "rows were fixed in the eventID column"))
+      return(x)
 
   }else{print("No NA's in eventID column");return(x)}
 
