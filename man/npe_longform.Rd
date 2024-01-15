@@ -8,6 +8,7 @@ npe_longform(
   neon_div_object,
   trace_cover = 0.5,
   scale = "plot",
+  verbose = FALSE,
   timescale = "annual"
 )
 }
@@ -20,6 +21,8 @@ neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{scale}{what level of spatial aggregation? This can be "1m", "10m", "100m", "plot",
 which is the default, or "site".}
+
+\item{verbose}{if true, prints details of which eventID errors were fixed into the console}
 
 \item{timescale}{what level of temporal aggregation? can be "subannual", which
 is only important for sites with multiple sampling bouts per year,

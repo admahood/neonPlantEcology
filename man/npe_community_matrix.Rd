@@ -51,6 +51,6 @@ package, hence the name.
 }
 \examples{
 data("D14")
-heights <- npe_heights(D14)
+comm <- npe_community_matrix(D14)
 
 }

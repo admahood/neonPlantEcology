@@ -4,7 +4,7 @@
 
 The National Ecological Observatory Network (NEON) collects long-term ecological monitoring data on myriad ecosystem components, including plant diversity. Plant diversity data is collected at yearly or sub-yearly time steps, depending on the ecology of the site, at plots that are constructed with a nested design. The spatial and temporal nature of the sampling design, and the resulting storage of the data, may not be straightforward to the average end user. Thus, I created an R package for transforming this raw data product into forms that are easy to use for ecologists. The following is a short explanation of the data transformation process.
 
-This package contains scripts for processing plant species cover and occurrence data from NEON into formats that are easy to use, particularily with the `vegan` package. The main functions are `npe_community_matrix` which creates vegan-friendly species occurrence and abundance matrices, and `npe_diversity_info`, which creates summary statistics by site, plot or subplot on the diversity, cover, relative cover, and number of species of natives, non-natives, and members of the family or species of your choosing.
+This package contains scripts for processing plant species cover and occurrence data from NEON into formats that are easy to use, particularily with the `vegan` package. The main functions are `npe_community_matrix` which creates vegan-friendly species occurrence and abundance matrices, and `npe_summary`, which creates summary statistics by site, plot or subplot on the diversity, cover, relative cover, and number of species of natives, non-natives, and members of the family or species of your choosing.
 
 ## Installation Instructions
 
@@ -34,9 +34,9 @@ This function converts the diversity object downloaded from NEON into a matrix o
 
 `species_occurrence_matrix <- npe_community_matrix(sites, binary=TRUE)`
 
-### npe_diversity_info
+### npe_summary
 
-`npe_diversity_info` calculates various biodiversity and cover indexes at the plot or subplot scale for each year for each plot. Outputs a data frame with number of species, percent cover, relative percent cover, and shannon diveristy, for natives, exotics and all species. Also calculates all of these metrics for the families and/or species of your choice.
+`npe_summary` calculates various biodiversity and cover indexes at the plot or subplot scale for each year for each plot. Outputs a data frame with number of species, percent cover, relative percent cover, and shannon diveristy, for natives, exotics and all species. Also calculates all of these metrics for the families and/or species of your choice.
 
 | Variable | Description | Additional arguments |
 |:---------|-------------|-------------|
@@ -55,7 +55,7 @@ This function converts the diversity object downloaded from NEON into a matrix o
 
 ### npe_longform
 
-This is really the meat of the package. It is used as a helper function for `npe_community_matrix` and `npe_diversity_info`. In many cases the end user will not need to deal with it, but if all you want is a longform dataframe of the percent cover of each species in each plot or subplot, this is the function for you. 
+This is really the meat of the package. It is used as a helper function for `npe_community_matrix` and `npe_summary`. In many cases the end user will not need to deal with it, but if all you want is a longform dataframe of the percent cover of each species in each plot or subplot, this is the function for you. 
 
 After the data is downloaded from the site(s) of interest, the user needs to make three decisions about how the data is processed. First, the scale of analysis. The NEON plots have a nested design, in which each 400m2 plot is divided into 4 100m2 subplots, each of which has two nested 10m2 and 1m2 subplots (Barnett et al. 2019). Cover is estimated in the 1m2 subplots, occurrence for those species which are not present in the 1m2 subplot is recorded in each 10m2 subplot, and finally occurrence is then recorded in the 100m2 subplots for those species that do not occur in the 1m2 and 10m2 subplots that are nested within. The user can decide whether they want to analyze only the 1m2 subplots, the 1 and 10m2 subplots, 1, 10 and 100m2 or the whole plot scale. Next, the user decides what the trace cover estimate would be for the occurrence data. This is set at a default value of 0.5 percent. Lastly, there is an argument whether to fix the native status codes for unknown species.
 

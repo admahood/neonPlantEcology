@@ -4,7 +4,12 @@
 \alias{npe_heights}
 \title{Get heights}
 \usage{
-npe_heights(neon_div_object, scale = "plot", timescale = "annual")
+npe_heights(
+  neon_div_object,
+  scale = "plot",
+  verbose = FALSE,
+  timescale = "annual"
+)
 }
 \arguments{
 \item{neon_div_object}{the raw diversity data downloaded using
@@ -13,6 +18,8 @@ neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{scale}{the spatial scale of aggregation. Can be "1m", "10m", "100m",
 "plot" or "site". default is "plot".}
+
+\item{verbose}{if true, prints details of which eventID errors were fixed into the console}
 
 \item{timescale}{The temporal scale of aggregation. Can be "all", "annual" or
 "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".}
@@ -23,4 +30,8 @@ spatial and temporal scale chosen by the user.
 }
 \description{
 Get heights
+}
+\examples{
+data("D14")
+heights <- npe_heights(D14)
 }

@@ -16,18 +16,21 @@
 #' @param dpID if you need a data product not given as one of the product
 #' @param ... additional arguments can be passed to neonUtilities::loadByProduct
 #' options, set the data product ID here (e.g. "DP1.10023.001").
+#' @param verbose if true, prints which sites are being downloaded
 #' @keywords download neon diversity
 #'
 #' @examples
-#' \dontrun{diversity_object <- npe_download(sites = "JORN")}
+#' \donttest{diversity_object <- npe_download(sites = "JORN")}
 #' @returns a list
 #' @export
 npe_download <- function(sites = "JORN",
                          dpID = NA,
                          token = NA,
+                         verbose = TRUE,
                          product = "plant_diversity", ...){
   requireNamespace("neonUtilities")
-  print(stringr::str_c("downloading the following sites:"));print(sites)
+  if(verbose) message(stringr::str_c("downloading the following sites:"))
+  if(verbose) message(sites)
   if(!is.na(dpID)){
     dpID <- dpID
     }else{
@@ -95,15 +98,19 @@ npe_update_subplots <- function(neon_div_object){
 #' eventID rows to the desired format.
 #'
 #' @param x raw list data from NEON api
+#' @param verbose if true, prints details of which eventID errors were fixed into the console
 #' @returns the same list object but with repaired eventIDs
+#' @examples
+#' data("D14")
+#' x <- npe_eventID_fixer(D14)
 #' @export
-npe_eventID_na_fixer <- function(x){
+npe_eventID_fixer <- function(x, verbose = FALSE){
   requireNamespace("stringr")
   requireNamespace("dplyr")
 
   all_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
-  print(paste("The following eventID entries will be fixed, hopefully:"))
-  print(paste(all_event_ids[nchar(all_event_ids) != 11] |> unique()))
+  if(verbose) message(paste("The following eventID entries will be fixed, hopefully:"))
+  if(verbose) message(paste(all_event_ids[nchar(all_event_ids) != 11] |> unique()))
 
   if(any(is.na(all_event_ids)) || any(nchar(all_event_ids) != 11)){
     nas <- sum(is.na(all_event_ids))
@@ -161,14 +168,17 @@ npe_eventID_na_fixer <- function(x){
                         eventID))
       updated_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
 
-      print(paste(nas, "to", sum(is.na(updated_event_ids)), "NAs"))
-      print(paste(non_standards, "to", sum(nchar(updated_event_ids[!is.na(updated_event_ids)]) != 11), "non-standards"))
+      if(verbose) message(paste(nas, "to", sum(is.na(updated_event_ids)), "NAs"))
+      if(verbose) message(paste(non_standards, "to", sum(nchar(updated_event_ids[!is.na(updated_event_ids)]) != 11), "non-standards"))
 
       }
-      print(paste(sum(nas, non_standards), "rows were fixed in the eventID column"))
+    if(verbose) message(paste(sum(nas, non_standards), "rows were fixed in the eventID column"))
       return(x)
 
-  }else{print("No NA's in eventID column");return(x)}
+  }else{
+    if(verbose) message("No NA's in eventID column")
+    return(x)
+    }
 
 }
 
@@ -190,6 +200,7 @@ npe_eventID_na_fixer <- function(x){
 #' @param trace_cover cover value for subplots where only occupancy was recorded
 #' @param scale what level of spatial aggregation? This can be "1m", "10m", "100m", "plot",
 #' which is the default, or "site".
+#' @param verbose if true, prints details of which eventID errors were fixed into the console
 #' @param timescale what level of temporal aggregation? can be "subannual", which
 #' is only important for sites with multiple sampling bouts per year,
 #' "annual" or "all" for the full time series.
@@ -202,6 +213,7 @@ npe_eventID_na_fixer <- function(x){
 npe_longform <- function(neon_div_object,
                          trace_cover=0.5,
                          scale = "plot",
+                         verbose = FALSE,
                          timescale = "annual"){
   .datatable.aware <- TRUE
   requireNamespace("data.table")
@@ -211,7 +223,7 @@ npe_longform <- function(neon_div_object,
   requireNamespace("stringr")
 
   neon_div_object <- npe_update_subplots(neon_div_object) |>
-    npe_eventID_na_fixer()
+    npe_eventID_fixer(verbose = verbose)
 
   if(scale == "plot"){
     cover <- neon_div_object$div_1m2Data |>
@@ -490,14 +502,16 @@ npe_longform <- function(neon_div_object,
 #' "plot" or "site". default is "plot".
 #' @param timescale The temporal scale of aggregation. Can be "all", "annual" or
 #' "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".
+#' @param verbose if true, prints details of which eventID errors were fixed into the console
 #' @examples
 #' data("D14")
-#' heights <- npe_groundcover(D14)
+#' groundcover <- npe_groundcover(D14)
 #' @returns a data frame with each row a single observation of ground cover at the
 #' spatial and temporal scale chosen by the user.
 #' @export
 npe_groundcover <- function(neon_div_object,
                             scale = "plot",
+                            verbose = FALSE,
                             timescale = "annual"){
 
   .datatable.aware <- TRUE
@@ -508,7 +522,7 @@ npe_groundcover <- function(neon_div_object,
   requireNamespace("stringr")
 
   neon_div_object <- npe_update_subplots(neon_div_object) |>
-    npe_eventID_na_fixer()
+    npe_eventID_fixer(verbose = verbose)
 
   if(scale == "plot"){
     full_on_cover <- neon_div_object$div_1m2Data |>
@@ -680,12 +694,17 @@ npe_groundcover <- function(neon_div_object,
 #' "plot" or "site". default is "plot".
 #' @param timescale The temporal scale of aggregation. Can be "all", "annual" or
 #' "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".
+#' @param verbose if true, prints details of which eventID errors were fixed into the console
 #' @returns a data frame with each row a single observation of species height at the
 #' spatial and temporal scale chosen by the user.
+#' @examples
+#' data("D14")
+#' heights <- npe_heights(D14)
 #' @export
 npe_heights <- function(neon_div_object,
-                            scale = "plot",
-                            timescale = "annual"){
+                        scale = "plot",
+                        verbose = FALSE,
+                        timescale = "annual"){
 
   .datatable.aware <- TRUE
   requireNamespace("data.table")
@@ -695,7 +714,7 @@ npe_heights <- function(neon_div_object,
   requireNamespace("stringr")
 
   neon_div_object <- npe_update_subplots(neon_div_object) |>
-    npe_eventID_na_fixer()
+    npe_eventID_fixer(verbose = verbose)
 
   if(scale == "plot"){
     full_on_height <- neon_div_object$div_1m2Data |>
@@ -847,6 +866,7 @@ npe_heights <- function(neon_div_object,
 
   return(full_on_height)
 }
+
 #' Create a species abundance or occurrence matrix
 #'
 #' npe_community_matrix creates a wide matrix of species cover or binary (presence/absence)
@@ -872,7 +892,7 @@ npe_heights <- function(neon_div_object,
 #' input data separately
 #' @examples
 #' data("D14")
-#' heights <- npe_heights(D14)
+#' comm <- npe_community_matrix(D14)
 #'
 #' @returns a data frame with each row a site aggregated at the spatial and
 #' temporal scales chosen by the user. Each column is a single species, and cell
@@ -984,7 +1004,7 @@ npe_community_matrix <- function(x,
 
 #' Get plant biodiversity information for NEON plots
 #'
-#' npe_diversity_info calculates various biodiversity and cover indexes at the
+#' npe_summary calculates various biodiversity and cover indexes at the
 #' plot or subplot scale at each timestep for each plot. Outputs a data frame
 #' with number of species, percent cover, relative percent cover (relative to the cover of the other plants), and shannon
 #' diversity, for natives, exotics and all species. Also calculates all of these
@@ -996,7 +1016,7 @@ npe_community_matrix <- function(x,
 #' @param scale what level of aggregation? This can be "1m", "10m", "100m",
 #' "plot" or "site". "plot" is the default.
 #' @param trace_cover cover value for subplots where only occupancy was recorded
-#' @param timescale by default npe_diversity_info groups everything by year.
+#' @param timescale by default npe_summary groups everything by year.
 #' The user may set this argument to "all" to have the function aggregate the years
 #' together and then calculate diversity and cover indexes, or "subannual" for bout-level.
 #' @param betadiversity If evaluating at the plot or site level, should beta
@@ -1008,13 +1028,13 @@ npe_community_matrix <- function(x,
 #' @param families Which specific families should the metrics be calculated for?
 #' This can be a concatenated vector if the user want more than one family.
 #' @examples
-#' # x <- download_plant_div("SRER")
-#' # plot_level <- neonPlantEcology::npe_diversity_info(neon_div_object = x, scale = "plot")
+#' data("D14")
+#' plot_level <- neonPlantEcology::npe_summary(neon_div_object = D14, scale = "plot")
 #' @returns a data frame of higher-level summary information. Number of species,
 #' Shannon-Weaver alpha diversity, cover, relative cover, for all species together
 #' and grouped by nativeStatusCode.
 #' @export
-npe_diversity_info <- function(neon_div_object,
+npe_summary <- function(neon_div_object,
                                scale = "plot",
                                trace_cover = 0.5,
                                timescale = "annual",
@@ -1500,10 +1520,7 @@ npe_diversity_info <- function(neon_div_object,
 #' @examples
 #'
 #' data("D14")
-#' # convert to longform cover
 #' lf_div <- npe_longform(D14)
-#'
-#' # change all of the unknown Abutilon spp to native
 #' modified_lf_div <- npe_change_native_status(lf_div, "ABUTI", "JORN", "N")
 #'
 #' @export
@@ -1528,14 +1545,12 @@ npe_change_native_status <- function(df, taxon, site, new_code){
 #'columns only.
 #'@param spatial_only set to TRUE if you only want the coordinates and none of
 #'the ancillary variables.
-#'@param dest_dir where to download the files
 #'@param input to what kind of neonPlantEcology product are you appending? Can
 #'be "community_matrix", "longform_cover", or "summary_info".
 #'@returns a data frame
 #'
 #'@export
 npe_plot_centroids <- function(df,
-                               dest_dir = file.path(getwd(), "tmp"),
                                type = "latlong",
                                spatial_only = TRUE,
                                input = "community_matrix"){
@@ -1543,26 +1558,16 @@ npe_plot_centroids <- function(df,
   requireNamespace("sf")
   requireNamespace("tibble")
   requireNamespace("dplyr")
-  shp_file <- file.path(dest_dir, "All_NEON_TOS_Plots_V8/All_NEON_TOS_Plot_Centroids_V8.shp")
-  if(!file.exists(shp_file)){
-    url <- "https://www.neonscience.org/sites/default/files/All_NEON_TOS_Plots_V8.zip"
-    file <- stringr::str_split(url, "/", simplify = T)[length(stringr::str_split(url, "/", simplify = T))]
-    dir.create(dest_dir, recursive = T)
-    download.file(url=url, destfile = file.path(dest_dir, file))
-    unzip(zipfile = file.path(dest_dir,file),
-          exdir = dest_dir)
-  }
-  if(type == "spatial") neon_plots <- sf::st_read(shp_file)
-  if(type == "latlong") neon_plots <- sf::st_read(stringr::str_replace(shp_file, ".shp", ".csv"))
+  data("plot_centroids", envir = environment())
 
   if(input == "community_matrix") outdf <- df |>
       tibble::rownames_to_column("plot_info") |>
       dplyr::mutate(plotID = stringr::str_sub(plot_info,1,8)) |>
-      dplyr::left_join(neon_plots, by = "plotID")
-  if(input == "longform_cover") outdf <- df |>
-      dplyr::left_join(neon_plots, by = "plotID")
-  if(input == "summary_info") outdf <- df |>
-      dplyr::left_join(neon_plots, by = "plotID")
+      dplyr::left_join(plot_centroids, by = "plotID")
+  if(input == "longform") outdf <- df |>
+      dplyr::left_join(plot_centroids, by = "plotID")
+  if(input == "summary") outdf <- df |>
+      dplyr::left_join(plot_centroids, by = "plotID")
 
   if(spatial_only && type == "spatial") outdf <- dplyr::select(outdf, plotID)
   if(spatial_only && type == "latlong") outdf <- dplyr::select(outdf, plotID, latitude, longitude)
@@ -1631,7 +1636,7 @@ npe_site_ids <- function(by = NA, domain = NA, type = NA, aridity=NA, koppen=NA)
     "ai" = c(1.08410927596454, 1.31410357142857, 0.849784615384615, 0.787831148191798, 0.811638850336408, 0.790833333333333, 0.684451515151515, 0.828816666666667, 0.51492, 0.551633333333333, 0.95566, 0.913493179783889, 0.884850566524963, 0.575726923076923, 0.5695, 0.683575, 0.953840740740741, 1.19839423076923, 0.924217583681487, 0.973891549295775, 0.908614285714286, 0.983518201965764, 0.366794117647059, 0.379916806861188, 0.334770263282546, 0.212731313131313, 0.354683044307244, 0.249034848629603, 0.46629375, 0.354155555555556, 0.453812389380531, 0.48867619047619, 0.175980519480519, 0.175426116838488, 0.116921666666667, 0.176280769230769, 1.9526, 2.280268, 0.249885185185185, 0.42392, 0.500568055555556, 0.54825251396648, 0.467794827586207, 0.500236438942441, 0.46619512195122, 0.709120512820513, 1.909385)
     )
   # all
-  if(is.na(by))return( print("please specify using the 'by' argument (e.g. by = 'domain')"))
+  if(is.na(by))return(warning("please specify using the 'by' argument (e.g. by = 'domain')"))
 
   if(by == "all") return(unique(sites$siteID))
 

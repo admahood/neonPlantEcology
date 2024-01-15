@@ -6,6 +6,7 @@ ignore_unused_imports <- function(){
   utils::globalVariables
   ggplot2::ggplot
   ggpubr::ggarrange
+  sf::st_read
 }
 
 # solving the note on global variables (a symptom of using dplyr a lot)
@@ -19,4 +20,5 @@ utils::globalVariables(c("nativeStatusCode", "taxonID", "rowname", "site", "lut"
                          "heightPlantSpecies", "all_na", "height", "str_detect",
                          "download.file", "unzip", "plot_info", "latitude", "longitude",
                          "domainName", "domainNumb", "siteType", "ai_class", "koppen_coarse",
-                         "koppen_fine", "shannon_unknown", "siteID", "data"))
+                         "koppen_fine", "shannon_unknown", "siteID", "data",
+                         "plot_centroids"))

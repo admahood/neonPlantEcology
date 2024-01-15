@@ -1,14 +1,14 @@
 Package: neonPlantEcology
 Type: Package
-Title: A Package to Process the National Ecological Observatory Network's Plant Presence and Percent Cover Data for Use in Ecological Analysis
-Version: 1.3.4
+Title: Process NEON Plant Data for Ecological Analysis
+Version: 1.3.5
 Date: 2024-01-03
 Authors@R: c(
   person("Adam", "Mahood", email = "admahood@gmail.com",role = c("aut", "cre")),
   person("Jacob", "Macdonald", role = "ctb"), 
   person("Ranjan", "Muthukrishnan", role = "ctb"))
 Maintainer: Adam Mahood <admahood@gmail.com>
-Description: Functions for downloading and organizing Plant Presence and Percent Cover data from the National Ecological Observatory Network.
+Description: Downloading and organizing plant presence and percent cover data from the National Ecological Observatory Network <https://www.neonscience.org>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

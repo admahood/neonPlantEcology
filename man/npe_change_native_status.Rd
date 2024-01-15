@@ -28,10 +28,7 @@ allows for post-hoc modification of the native status code for cases like this.
 \examples{
 
 data("D14")
-# convert to longform cover
 lf_div <- npe_longform(D14)
-
-# change all of the unknown Abutilon spp to native
 modified_lf_div <- npe_change_native_status(lf_div, "ABUTI", "JORN", "N")
 
 }

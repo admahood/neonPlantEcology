@@ -6,7 +6,6 @@
 \usage{
 npe_plot_centroids(
   df,
-  dest_dir = file.path(getwd(), "tmp"),
   type = "latlong",
   spatial_only = TRUE,
   input = "community_matrix"
@@ -14,8 +13,6 @@ npe_plot_centroids(
 }
 \arguments{
 \item{df}{a neonPlantEcology-produced data frame}
-
-\item{dest_dir}{where to download the files}
 
 \item{type}{what type of ancillary data structure you want joined. Can be
 "spatial", which will turn the data frame into an sf data frame, or "latlong",

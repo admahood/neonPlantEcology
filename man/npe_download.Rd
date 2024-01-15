@@ -8,6 +8,7 @@ npe_download(
   sites = "JORN",
   dpID = NA,
   token = NA,
+  verbose = TRUE,
   product = "plant_diversity",
   ...
 )
@@ -18,6 +19,8 @@ npe_download(
 \item{dpID}{if you need a data product not given as one of the product}
 
 \item{token}{a token from neonscience.org}
+
+\item{verbose}{if true, prints which sites are being downloaded}
 
 \item{product}{a plain language vector of the data product to be downloaded.
 Can be "plant_diversity", "litterfall", "woody_veg_structure",
@@ -38,7 +41,7 @@ can enter the product ID number (dpID). Downloads Plant Presence and Percent
 Cover by default (DP1.10058.001).
 }
 \examples{
-\dontrun{diversity_object <- npe_download(sites = "JORN")}
+\donttest{diversity_object <- npe_download(sites = "JORN")}
 }
 \keyword{diversity}
 \keyword{download}

@@ -99,12 +99,12 @@ ggplot(nmds_sites, aes(x=MDS1, y=MDS2, color = eventID, size = elevation, shape 
 
 ```
 
-# getting summary info by site using `npe_diversity_info`
+# getting summary info by site using `npe_summary`
 
 ## Species richness by biogeographical origin
 
 ```{r nspp}
-di <- npe_diversity_info(D14, scale = "site", timescale = "all")
+di <- npe_summary(D14, scale = "site", timescale = "all")
 
 dj<- di |>
   dplyr::select(site, eventID, starts_with("nspp")) |>
