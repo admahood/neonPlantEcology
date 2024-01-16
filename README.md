@@ -34,7 +34,7 @@ This function converts the diversity object downloaded from NEON into a matrix o
 
 `species_occurrence_matrix <- npe_community_matrix(sites, binary=TRUE)`
 
-### npe_summary
+### npe_summary (NOTE: formerly npe_diversity_info)
 
 `npe_summary` calculates various biodiversity and cover indexes at the plot or subplot scale for each year for each plot. Outputs a data frame with number of species, percent cover, relative percent cover, and shannon diveristy, for natives, exotics and all species. Also calculates all of these metrics for the families and/or species of your choice.
 
