@@ -2,9 +2,9 @@
 
 # neonPlantEcology
 
-The National Ecological Observatory Network (NEON) collects long-term ecological monitoring data on myriad ecosystem components, including plant diversity. Plant diversity data is collected at yearly or sub-yearly time steps, depending on the ecology of the site, at plots that are constructed with a nested design. The spatial and temporal nature of the sampling design, and the resulting storage of the data, may not be straightforward to the average end user. Thus, I created an R package for transforming this raw data product into forms that are easy to use for ecologists. The following is a short explanation of the data transformation process.
+The National Ecological Observatory Network (NEON) collects long-term ecological monitoring data on myriad ecosystem components, including plant diversity. Plant diversity data is collected at yearly or sub-yearly time steps, depending on the ecology of the site, at plots that are constructed with a nested design. The spatial and temporal nature of the sampling design, and the resulting storage of the data, may not be straightforward to the average end user. Thus, we created an R package for transforming this raw data product into forms that are easy to use for ecologists. 
 
-This package contains scripts for processing plant species cover and occurrence data from NEON into formats that are easy to use, particularily with the `vegan` package. The main functions are `npe_community_matrix` which creates vegan-friendly species occurrence and abundance matrices, and `npe_summary`, which creates summary statistics by site, plot or subplot on the diversity, cover, relative cover, and number of species of natives, non-natives, and members of the family or species of your choosing.
+This package contains functions for processing the Plant Presence and Percent Cover data (PPPC, DP1.10058.001) from NEON into formats that are familiar to ecologists, in particular we were interested in creating data structures that are used in the {vegan} package. The main functions are `npe_community_matrix` which creates vegan-friendly species occurrence and abundance matrices, and `npe_summary`, which creates summary statistics by site, plot or subplot on the diversity, cover, relative cover, and number of species of natives, non-natives, and members of the family or species of your choosing. The under-the-hood workhorse is npe_longform, which converts the raw data into a long-form data frame.
 
 ## Installation Instructions
 
@@ -18,21 +18,26 @@ This package contains scripts for processing plant species cover and occurrence 
 
 ## Use
 
+### npe_site_ids
+
+If you're not sure which sites to download, you can generate a vector of site codes, which are used by `neonUtilities::loadByProduct` as well as `npe_download`. `npe_site_ids` has the capacity to filter sites based on domain, site type, aridity class, and Koppen Gieger climate classification.
+
 ### npe_download
 
-First, download some data using the `download_plant_div` function. It defaults to download the diversity data for the Santa Rita Experimental Range in Domain 14 in Arizona. The `sites` arguement in this function is used to specify which site (or sites) you wish to download. A list of field sites can be found [here](https://www.neonscience.org/field-sites/explore-field-sites).
+This function downloads any NEON dataset, and defaults to the PPPC data for the Jornada Experimental Range in New Mexico, part of Domain 14. The `sites` arguement in this function is used to specify which site (or sites) you wish to download. 
 
 `sites <- npe_download_plant_div(sites = c("SRER", "JORN")`
 
-The output is a list of four things. The first two are of most interest. The first list item is the abundances observed in the 1m<sup>2</sup> subplots. The second list item is the occurrences observed for the 10m<sup>2</sup> and 100m<sup>2</sup> subplots.
-
-The function `npe_download` is more generalizaed, and can be used to download any data product from neon.
+The raw PPPC data is a list many items. Two are of most interest. The first list item is the abundances observed in the 1m<sup>2</sup> subplots. The second list item is the occurrences observed for the 10m<sup>2</sup> and 100m<sup>2</sup> subplots.
 
 ### npe_community_matrix
 
 This function converts the diversity object downloaded from NEON into a matrix of either abundances (percent cover from 0-100) or occurrences (0 or 1), at the scale of your choosing (1m<sup>2</sup>, 10m<sup>2</sup>, 100m<sup>2</sup>, or 400m<sup>2</sup>, which is a whole plot). It can also take as an input the output from the `divStack` function in the neonPlants package.
 
 `species_occurrence_matrix <- npe_community_matrix(sites, binary=TRUE)`
+
+### npe_cm_metadata
+`npe_community_matrix` is designed to work with the vegan package, and one of the requirements of vegan functions is that there are only numeric columns in community matrices. Therefore, all of the metatdata is collapsed into the rownames. This function allows you to extract that very basic metadata back out to a more easily interpretable data frame.
 
 ### npe_summary (NOTE: formerly npe_diversity_info)
 
@@ -61,13 +66,26 @@ After the data is downloaded from the site(s) of interest, the user needs to mak
 
 There are a few decisions I made that are not provided as arguments to the functions. First, some sites are sampled in multiple bouts, due to the temporal heterogeneity in the life cycles of different plants. For example, in the Jornada Experimental Range, (site abbreviation “JORN”) there spring and fall blooms, and so plants are sampled around peak biomass for each of those seasons. I reasoned that this would lead to many herbaceous species that would be undetected in one season and at full biomass in the other. Thus, in order to capture a cover estimate that corresponds to peak biomass, we take the maximum cover estimate between sampling bouts. 
 
-In some cases, the value for the cover of a species in a 1m2 plot was NA. I assumed these were cases where the field botanist recorded the species present and forgot to estimate the cover for that species, and returned to the office with a blank space on the data sheet where the cover should be. When cases like this were encountered, we replaced those NA values with the trace cover value.
+In some cases, the value for the cover of a species in a 1m2 plot was NA. We assumed these were cases where the field botanist recorded the species present and forgot to estimate the cover for that species, and returned to the office with a blank space on the data sheet where the cover should be. When cases like this were encountered, we replaced those NA values with the trace cover value.
 
 These decisions are given as arguments to the function call. The function aggregates the cover to the appropriate scale. At the whole plot scale, for example, first the 1m2 subplots are aggregated by taking the intrayear max per subplot, then taking the sum of those values for the entire plot divided by the number of subplots. The 10 and 100m2 subplots are all given the trace cover value, summed, and divided by the number of subplots. Then the cover data frame is combined with the data frame of trace cover values, and summed by plot.
 
 ### npe_change_native_status
 
 There are a many instances where plants are classified as unknown, but still have a certain level of known-ness. For example, an unknown Opuntia sp. may have the genus and family recorded, but still be listed as unknown for the nativeStatusCode. It is possible to look at local flora and determine that while the exact species is unknown, the plant is very likely to be native or non-native. For example, a site may have 5 species of Opuntia that are all native. In this case, if the user cares about the native status, we provide a script that can be edited manually (unk_investigation.R) to address this concern. I did a very basic first try for the sites we were interested in examining while I was writing these functions. All of the above functions have an arguement, `fix_unks`, that defaults to `FALSE`. If it is set to `TRUE`, the `unk_fixer` function is called from the unk_investigation.R script and native status codes are changed according to the script. This is still very much in the beta stage. Another thought on dealing with unknown species is using a model that incorporates that uncertainty developed recently by Anna I Spiers (2021).
+
+### npe_plot_centroids
+
+This allows you to get geographic coordinates for the plot centroids for a given data set. 
+
+### npe_heights
+
+In addition to percent cover, NEON technicians also measure the average maximum height of the plant species in the 1m subplots. This allows you to get that data.
+
+### npe_groundcover
+
+In addition to percent cover, NEON technicians also measure the ground cover in the 1m subplots. This allows you to get that data 
+
 
 # References
 
