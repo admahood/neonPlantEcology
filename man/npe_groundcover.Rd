@@ -8,6 +8,7 @@ npe_groundcover(
   neon_div_object,
   scale = "plot",
   verbose = FALSE,
+  pc_na_value = 0.5,
   timescale = "annual"
 )
 }
@@ -20,6 +21,10 @@ neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 "plot" or "site". default is "plot".}
 
 \item{verbose}{if true, prints details of which eventID errors were fixed into the console}
+
+\item{pc_na_value}{sometimes the raw data from neon will have NA's in the percent
+cover cells. This is assumed to be a data entry error and is set to 0.5 by
+default.}
 
 \item{timescale}{The temporal scale of aggregation. Can be "all", "annual" or
 "subannual" in the case of multiple sampling bouts per year. Defaults to "annual".}

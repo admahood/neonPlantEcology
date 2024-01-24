@@ -16,7 +16,8 @@ npe_download(
 \arguments{
 \item{sites}{a vector of NEON site abbreviations. Defaults to "JORN"}
 
-\item{dpID}{if you need a data product not given as one of the product}
+\item{dpID}{if you need a data product not given as one of the product
+options, set the data product ID here (e.g. "DP1.10023.001").}
 
 \item{token}{a token from neonscience.org}
 
@@ -28,7 +29,7 @@ Can be "plant_diversity", "litterfall", "woody_veg_structure",
 or "soil_microbe_biomass"}
 
 \item{...}{additional arguments can be passed to neonUtilities::loadByProduct
-options, set the data product ID here (e.g. "DP1.10023.001").}
+see ?neonUtilites::loadByProduct for more details}
 }
 \value{
 a list

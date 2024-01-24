@@ -7,6 +7,7 @@
 npe_longform(
   neon_div_object,
   trace_cover = 0.5,
+  pc_na_value = 0.5,
   scale = "plot",
   verbose = FALSE,
   timescale = "annual"
@@ -18,6 +19,10 @@ neonPlantEcology::download_plant_div() or the function
 neonUtilities::loadByProduct() with the dpID arguement set to "DP1.10058.001".}
 
 \item{trace_cover}{cover value for subplots where only occupancy was recorded}
+
+\item{pc_na_value}{sometimes the raw data from neon will have NA's in the percent
+cover cells. This is assumed to be a data entry error and is set to 0.5 by
+default.}
 
 \item{scale}{what level of spatial aggregation? This can be "1m", "10m", "100m", "plot",
 which is the default, or "site".}
