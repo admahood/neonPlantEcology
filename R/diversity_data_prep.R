@@ -91,6 +91,99 @@ npe_update_subplots <- function(neon_div_object){
   return(neon_div_object)
 }
 
+# #' fix errors in the eventID column
+# #'
+# #' neonPlantEcology is a house of cards that rests delicately upon the eventID
+# #' column being in the site.bout-number.year format, and if there is any deviation
+# #' from that format all hell breaks loose. This function converts any NA or non-standard
+# #' eventID rows to the desired format.
+# #'
+# #' @param x raw list data from NEON api
+# #' @param verbose if true, prints details of which eventID errors were fixed into the console
+# #' @returns the same list object but with repaired eventIDs
+# #' @examples
+# #' data("D14")
+# #' x <- npe_eventID_fixer(D14)
+# #' @export
+# npe_eventID_fixer0 <- function(x, verbose = FALSE){
+#   requireNamespace("stringr")
+#   requireNamespace("dplyr")
+#
+#   all_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
+#   if(verbose) message(paste("The following eventID entries will be fixed, hopefully:"))
+#   if(verbose) message(paste(all_event_ids[nchar(all_event_ids) != 11] |> unique(), " "))
+#
+#   if(any(is.na(all_event_ids)) || any(nchar(all_event_ids) != 11)){
+#     nas <- sum(is.na(all_event_ids))
+#     non_standards <- sum(nchar(all_event_ids[!is.na(all_event_ids)]) != 11)
+#
+#     eids <- dplyr::bind_rows(x$div_1m2Data  |>
+#       dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+#       dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
+#       dplyr::select(endDate, eventID, siteID),
+#       x$div_10m2Data100m2Data  |>
+#       dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+#       dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
+#       dplyr::select(endDate, eventID, siteID)) |>
+#       unique() |>
+#       dplyr::mutate(lut = paste0(siteID, endDate))
+#
+#     lut_eid <- eids$eventID
+#     names(lut_eid) <- eids$lut
+#
+#     # how many bouts are there? if there is only 1 bout, it's easy
+#     bouts <- x$div_1m2Data |>
+#       dplyr::filter(!is.na(eventID)) |>
+#       dplyr::pull(eventID) |>
+#       unique() |>
+#       stringr::str_split_i("\\.", 2) |>
+#       unique()
+#     if(length(bouts)==1){
+#       x$div_1m2Data <-
+#         x$div_1m2Data |>
+#         dplyr::mutate(eventID = ifelse(is.na(eventID),
+#            stringr::str_c(siteID, ".", "1", ".", stringr::str_sub(endDate,1,4)),
+#            eventID)
+#                )
+#       x$div_10m2Data100m2Data <-
+#         x$div_10m2Data100m2Data |>
+#         dplyr::mutate(eventID = ifelse(is.na(eventID),
+#           stringr::str_c(siteID, ".", "1", ".", stringr::str_sub(endDate,1,4)),
+#           eventID)
+#         )
+#      return(x)
+#     }else{ # more than one bout
+#       x$div_10m2Data100m2Data <-
+#         x$div_10m2Data100m2Data |>
+#         dplyr::mutate(lut = paste0(siteID, endDate),
+#           eventID = ifelse(
+#           is.na(eventID) | nchar(eventID) != 11,
+#           lut_eid[lut],
+#           eventID))
+#       x$div_1m2Data <-
+#         x$div_1m2Data |>
+#         dplyr::mutate(lut = paste0(siteID, endDate),
+#                       eventID = ifelse(
+#                         is.na(eventID) | nchar(eventID) != 11,
+#                         lut_eid[lut],
+#                         eventID))
+#       updated_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
+#
+#       if(verbose) message(paste(nas, "to", sum(is.na(updated_event_ids)), "NAs"))
+#       if(verbose) message(paste(non_standards, "to", sum(nchar(updated_event_ids[!is.na(updated_event_ids)]) != 11), "non-standards"))
+#
+#       }
+#     if(verbose) message(paste(sum(nas, non_standards), "rows were fixed in the eventID column"))
+#       return(x)
+#
+#   }else{
+#     if(verbose) message("No NA's in eventID column")
+#     return(x)
+#     }
+#
+# }
+
+
 #' fix errors in the eventID column
 #'
 #' neonPlantEcology is a house of cards that rests delicately upon the eventID
@@ -108,80 +201,72 @@ npe_update_subplots <- function(neon_div_object){
 npe_eventID_fixer <- function(x, verbose = FALSE){
   requireNamespace("stringr")
   requireNamespace("dplyr")
-
+  requireNamespace('lubridate')
   all_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
   if(verbose) message(paste("The following eventID entries will be fixed, hopefully:"))
   if(verbose) message(paste(all_event_ids[nchar(all_event_ids) != 11] |> unique(), " "))
 
-  if(any(is.na(all_event_ids)) || any(nchar(all_event_ids) != 11)){
-    nas <- sum(is.na(all_event_ids))
-    non_standards <- sum(nchar(all_event_ids[!is.na(all_event_ids)]) != 11)
+  eids <- dplyr::bind_rows(x$div_1m2Data  |>
+                             dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+                             dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
+                             dplyr::select(endDate, eventID, siteID),
+                           x$div_10m2Data100m2Data  |>
+                             dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
+                             dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
+                             dplyr::select(endDate, eventID, siteID)) |>
+    unique() |>
+    dplyr::mutate(lut = paste0(siteID, endDate))
 
-    eids <- dplyr::bind_rows(x$div_1m2Data  |>
-      dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
-      dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
-      dplyr::select(endDate, eventID, siteID),
-      x$div_10m2Data100m2Data  |>
-      dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
-      dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
-      dplyr::select(endDate, eventID, siteID)) |>
-      unique() |>
-      dplyr::mutate(lut = paste0(siteID, endDate))
+  lut_eid <- eids$eventID
+  names(lut_eid) <- eids$lut
 
-    lut_eid <- eids$eventID
-    names(lut_eid) <- eids$lut
+  bouts <- x$div_1m2Data |>
+    dplyr::select(eventID)|>
+    unique() |>
+    dplyr::filter(!is.na(eventID)) |>
+    tidyr::separate(eventID, sep = "\\.", into = c("site", "bout", "year")) |>
+    dplyr::mutate(site = stringr::str_sub(site, 1, 4)) |>
+    dplyr::group_by(site) |>
+    dplyr::summarise(bouts = length(unique(bout))) |>
+    dplyr::ungroup()
 
-    # how many bouts are there? if there is only 1 bout, it's easy
-    bouts <- x$div_1m2Data |>
-      dplyr::filter(!is.na(eventID)) |>
-      dplyr::pull(eventID) |>
-      unique() |>
-      stringr::str_split_i("\\.", 2) |>
-      unique()
-    if(length(bouts)==1){
-      x$div_1m2Data <-
-        x$div_1m2Data |>
-        dplyr::mutate(eventID = ifelse(is.na(eventID),
-           stringr::str_c(siteID, ".", "1", ".", stringr::str_sub(endDate,1,4)),
-           eventID)
-               )
-      x$div_10m2Data100m2Data <-
-        x$div_10m2Data100m2Data |>
-        dplyr::mutate(eventID = ifelse(is.na(eventID),
-          stringr::str_c(siteID, ".", "1", ".", stringr::str_sub(endDate,1,4)),
-          eventID)
-        )
-     return(x)
-    }else{ # more than one bout
-      x$div_10m2Data100m2Data <-
-        x$div_10m2Data100m2Data |>
-        dplyr::mutate(lut = paste0(siteID, endDate),
-          eventID = ifelse(
-          is.na(eventID) | nchar(eventID) != 11,
-          lut_eid[lut],
-          eventID))
-      x$div_1m2Data <-
-        x$div_1m2Data |>
-        dplyr::mutate(lut = paste0(siteID, endDate),
-                      eventID = ifelse(
-                        is.na(eventID) | nchar(eventID) != 11,
-                        lut_eid[lut],
-                        eventID))
-      updated_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
+  oneboutsites <- bouts |> dplyr::filter(bouts == 1) |> dplyr::pull(site)
+  twoboutsites <- bouts |> dplyr::filter(bouts == 2) |> dplyr::pull(site)
 
-      if(verbose) message(paste(nas, "to", sum(is.na(updated_event_ids)), "NAs"))
-      if(verbose) message(paste(non_standards, "to", sum(nchar(updated_event_ids[!is.na(updated_event_ids)]) != 11), "non-standards"))
+  # fix all eventIDs at one-bout sites
+  x$div_1m2Data <- x$div_1m2Data |>
+    dplyr::mutate(year = lubridate::year(endDate),
+           eventID = ifelse(siteID %in% oneboutsites,
+                            stringr::str_c(siteID, ".1.", year),
+                            eventID))
+  x$div_10m2Data100m2Data <- x$div_10m2Data100m2Data |>
+    dplyr::mutate(year = lubridate::year(endDate),
+           eventID = ifelse(siteID %in% oneboutsites,
+                            stringr::str_c(siteID, ".1.", year),
+                            eventID))
 
-      }
-    if(verbose) message(paste(sum(nas, non_standards), "rows were fixed in the eventID column"))
-      return(x)
 
-  }else{
-    if(verbose) message("No NA's in eventID column")
-    return(x)
-    }
+  # fill all two bout sites
+  x$div_10m2Data100m2Data <-
+    x$div_10m2Data100m2Data |>
+    dplyr::mutate(lut = paste0(siteID, endDate),
+                  eventID = ifelse(
+                    is.na(eventID) | nchar(eventID) != 11 & siteID %in% twoboutsites,
+                    lut_eid[lut],
+                    eventID))
+  x$div_1m2Data <-
+    x$div_1m2Data |>
+    dplyr::mutate(lut = paste0(siteID, endDate),
+                  eventID = ifelse(
+                    is.na(eventID) | nchar(eventID) != 11 & siteID %in% twoboutsites,
+                    lut_eid[lut],
+                    eventID))
+
+  return(x)
+
 
 }
+
 
 #' Convert raw NEON diversity object to longform plant cover data frame
 #'

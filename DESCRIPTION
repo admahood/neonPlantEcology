@@ -1,7 +1,7 @@
 Package: neonPlantEcology
 Type: Package
 Title: Process NEON Plant Data for Ecological Analysis
-Version: 1.4.0
+Version: 1.5.0
 Date: 2024-01-03
 Authors@R: c(
   person("Adam", "Mahood", email = "admahood@gmail.com",role = c("aut", "cre")),
@@ -18,13 +18,14 @@ Imports: neonUtilities,
          data.table,
          dtplyr,
          dplyr,
+         lubridate,
          sf,
          stringr,
          tibble,
          tidyr,
          ggpubr,
          utils
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Suggests: 
     knitr,
     rmarkdown

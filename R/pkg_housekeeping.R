@@ -21,4 +21,4 @@ utils::globalVariables(c("nativeStatusCode", "taxonID", "rowname", "site", "lut"
                          "download.file", "unzip", "plot_info", "latitude", "longitude",
                          "domainName", "domainNumb", "siteType", "ai_class", "koppen_coarse",
                          "koppen_fine", "shannon_unknown", "siteID", "data",
-                         "plot_centroids"))
+                         "plot_centroids", 'bout'))
