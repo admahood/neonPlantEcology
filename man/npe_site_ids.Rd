@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{npe_site_ids}
 \alias{npe_site_ids}
-\title{get site ids}
+\title{Get site ids}
 \usage{
 npe_site_ids(by, domain = NA, type = NA, aridity = NA, koppen = NA)
 }
@@ -22,8 +22,9 @@ e.g. domain = c("D01", "D14"), or domain = c(3, 14), can also be a mix: domain =
 a vector of four letter site identification codes.
 }
 \description{
-This uses the site boundary shapefile (obtainable by data('sites')) to get a
-list of siteID codes to feed into npe_download.
+This returns a list of 4 letter site ID codes to feed into npe_download. It can return
+all 47 siteID codes, or a subset based on site type, aridity index, Koppen-Geiger
+Climate region, or NEON domain.
 }
 \examples{
 all_sites <- npe_site_ids(by = "all")

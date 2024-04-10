@@ -1677,10 +1677,11 @@ npe_cm_metadata <- function(comm){
            dplyr::select(site, plot, scale, eventID, plotID, rowname))
 }
 
-#' get site ids
+#' Get site ids
 #'
-#' This uses the site boundary shapefile (obtainable by data('sites')) to get a
-#' list of siteID codes to feed into npe_download.
+#' This returns a list of 4 letter site ID codes to feed into npe_download. It can return
+#' all 47 siteID codes, or a subset based on site type, aridity index, Koppen-Geiger
+#' Climate region, or NEON domain.
 #'
 #' @param by How to select sites? Can be "all", "domain", "ai", "koppen", or "type".
 #' @param domain can be one or more domain codes, as a character vector, or as a number.
