@@ -91,99 +91,6 @@ npe_update_subplots <- function(neon_div_object){
   return(neon_div_object)
 }
 
-# #' fix errors in the eventID column
-# #'
-# #' neonPlantEcology is a house of cards that rests delicately upon the eventID
-# #' column being in the site.bout-number.year format, and if there is any deviation
-# #' from that format all hell breaks loose. This function converts any NA or non-standard
-# #' eventID rows to the desired format.
-# #'
-# #' @param x raw list data from NEON api
-# #' @param verbose if true, prints details of which eventID errors were fixed into the console
-# #' @returns the same list object but with repaired eventIDs
-# #' @examples
-# #' data("D14")
-# #' x <- npe_eventID_fixer(D14)
-# #' @export
-# npe_eventID_fixer0 <- function(x, verbose = FALSE){
-#   requireNamespace("stringr")
-#   requireNamespace("dplyr")
-#
-#   all_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
-#   if(verbose) message(paste("The following eventID entries will be fixed, hopefully:"))
-#   if(verbose) message(paste(all_event_ids[nchar(all_event_ids) != 11] |> unique(), " "))
-#
-#   if(any(is.na(all_event_ids)) || any(nchar(all_event_ids) != 11)){
-#     nas <- sum(is.na(all_event_ids))
-#     non_standards <- sum(nchar(all_event_ids[!is.na(all_event_ids)]) != 11)
-#
-#     eids <- dplyr::bind_rows(x$div_1m2Data  |>
-#       dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
-#       dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
-#       dplyr::select(endDate, eventID, siteID),
-#       x$div_10m2Data100m2Data  |>
-#       dplyr::mutate(eventID = stringr::str_remove_all(eventID, "\\_\\d{3}")) |>
-#       dplyr::filter(!is.na(eventID), nchar(eventID) == 11) |>
-#       dplyr::select(endDate, eventID, siteID)) |>
-#       unique() |>
-#       dplyr::mutate(lut = paste0(siteID, endDate))
-#
-#     lut_eid <- eids$eventID
-#     names(lut_eid) <- eids$lut
-#
-#     # how many bouts are there? if there is only 1 bout, it's easy
-#     bouts <- x$div_1m2Data |>
-#       dplyr::filter(!is.na(eventID)) |>
-#       dplyr::pull(eventID) |>
-#       unique() |>
-#       stringr::str_split_i("\\.", 2) |>
-#       unique()
-#     if(length(bouts)==1){
-#       x$div_1m2Data <-
-#         x$div_1m2Data |>
-#         dplyr::mutate(eventID = ifelse(is.na(eventID),
-#            stringr::str_c(siteID, ".", "1", ".", stringr::str_sub(endDate,1,4)),
-#            eventID)
-#                )
-#       x$div_10m2Data100m2Data <-
-#         x$div_10m2Data100m2Data |>
-#         dplyr::mutate(eventID = ifelse(is.na(eventID),
-#           stringr::str_c(siteID, ".", "1", ".", stringr::str_sub(endDate,1,4)),
-#           eventID)
-#         )
-#      return(x)
-#     }else{ # more than one bout
-#       x$div_10m2Data100m2Data <-
-#         x$div_10m2Data100m2Data |>
-#         dplyr::mutate(lut = paste0(siteID, endDate),
-#           eventID = ifelse(
-#           is.na(eventID) | nchar(eventID) != 11,
-#           lut_eid[lut],
-#           eventID))
-#       x$div_1m2Data <-
-#         x$div_1m2Data |>
-#         dplyr::mutate(lut = paste0(siteID, endDate),
-#                       eventID = ifelse(
-#                         is.na(eventID) | nchar(eventID) != 11,
-#                         lut_eid[lut],
-#                         eventID))
-#       updated_event_ids <- c(x$div_10m2Data100m2Data$eventID, x$div_1m2Data$eventID)
-#
-#       if(verbose) message(paste(nas, "to", sum(is.na(updated_event_ids)), "NAs"))
-#       if(verbose) message(paste(non_standards, "to", sum(nchar(updated_event_ids[!is.na(updated_event_ids)]) != 11), "non-standards"))
-#
-#       }
-#     if(verbose) message(paste(sum(nas, non_standards), "rows were fixed in the eventID column"))
-#       return(x)
-#
-#   }else{
-#     if(verbose) message("No NA's in eventID column")
-#     return(x)
-#     }
-#
-# }
-
-
 #' fix errors in the eventID column
 #'
 #' neonPlantEcology is a house of cards that rests delicately upon the eventID
@@ -1109,8 +1016,10 @@ npe_community_matrix <- function(x,
 #' npe_summary calculates various biodiversity and cover indexes at the
 #' plot or subplot scale at each timestep for each plot. Outputs a data frame
 #' with number of species, percent cover, relative percent cover (relative to the cover of the other plants), and shannon
-#' diversity, for natives, exotics and all species. Also calculates all of these
-#' metrics for the families and/or species of your choice.
+#' diversity, for natives, exotics, "notexotics", unknowns, and all species.
+#' "notexotic" refers to all species with native or unknown origin status. Also
+#' calculates all of these metrics for the families of your choice.
+#'
 #'
 #' @param neon_div_object the raw vegan::diversity data downloaded using
 #' neonPlantEcology::download_plant_div() or #' the function
@@ -1133,7 +1042,7 @@ npe_community_matrix <- function(x,
 #' data("D14")
 #' plot_level <- neonPlantEcology::npe_summary(neon_div_object = D14, scale = "plot")
 #' @returns a data frame of higher-level summary information. Number of species,
-#' Shannon-Weaver alpha diversity, cover, relative cover, for all species together
+#' Shannon-Weiner alpha diversity, cover, relative cover, for all species together
 #' and grouped by nativeStatusCode.
 #' @export
 npe_summary <- function(neon_div_object,
@@ -1773,28 +1682,25 @@ npe_cm_metadata <- function(comm){
 #' This uses the site boundary shapefile (obtainable by data('sites')) to get a
 #' list of siteID codes to feed into npe_download.
 #'
-#' @param by which variable to select sites by. Can be "domain", "ai", "koppen", or "type".
-#' Defaults to NA, which directs the function to return all site codes.
+#' @param by How to select sites? Can be "all", "domain", "ai", "koppen", or "type".
 #' @param domain can be one or more domain codes, as a character vector, or as a number.
 #' e.g. domain = c("D01", "D14"), or domain = c(3, 14), can also be a mix: domain = c(3, "D04).
 #' @param type can be "Core Terrestrial" or "Relocatable Terrestrial"
 #' @param aridity can be "Hyper-Arid", "Arid", "Dry sub-humid", or "Humid"
 #' @param koppen can be any 3 letter Koppen-Geiger code, or one of "Equatorial", "Arid", "Temperate", "Boreal", "Polar"
 #' @examples
-#'
-#' # if no domains or site types are specified, it returns all site codes
-#' all_sites <- npe_site_ids()
+#' all_sites <- npe_site_ids(by = "all")
 #' npe_site_ids(by = "domain", domain = c("Northeast", "Mid-Atlantic"))
 #' npe_site_ids(by = "domain", domain = c("D02", 15))
 #'
 #' @returns a vector of four letter site identification codes.
 #' @export
-npe_site_ids <- function(by = NA, domain = NA, type = NA, aridity=NA, koppen=NA){
+npe_site_ids <- function(by, domain = NA, type = NA, aridity=NA, koppen=NA){
   requireNamespace("dplyr")
   requireNamespace("stringr")
   sites <- data.frame(
     "ai_class" = c('Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Dry sub-humid', 'Dry sub-humid', 'Humid', 'Humid', 'Humid', 'Dry sub-humid', 'Dry sub-humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Humid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Semi-Arid', 'Arid', 'Arid', 'Arid', 'Arid', 'Humid', 'Humid', 'Semi-Arid', 'Semi-Arid', 'Dry sub-humid', 'Dry sub-humid', 'Semi-Arid', 'Dry sub-humid', 'Semi-Arid', 'Humid', 'Humid'),
-    "koppen_coarsei" = c('Boreal', 'Boreal', 'Boreal', 'Boreal', 'Temperate', 'Temperate', 'Temperate', 'Temperate', 'Equatorial', 'Equatorial', 'Boreal', 'Boreal', 'Boreal', 'Boreal', 'Boreal', 'Boreal', 'Temperate', 'Temperate', 'Boreal', 'Temperate', 'Temperate', 'Temperate', 'Boreal', 'Boreal', 'Boreal', 'Arid', 'Boreal', 'Arid', 'Temperate', 'Temperate', 'Boreal', 'Boreal', 'Arid', 'Arid', 'Arid', 'Arid', 'Temperate', 'Temperate', 'Temperate', 'Temperate', 'Boreal', 'Boreal', 'Polar', 'Boreal', 'Boreal', 'Boreal', 'Temperate'),
+    "koppen_coarse" = c('Boreal', 'Boreal', 'Boreal', 'Boreal', 'Temperate', 'Temperate', 'Temperate', 'Temperate', 'Equatorial', 'Equatorial', 'Boreal', 'Boreal', 'Boreal', 'Boreal', 'Boreal', 'Boreal', 'Temperate', 'Temperate', 'Boreal', 'Temperate', 'Temperate', 'Temperate', 'Boreal', 'Boreal', 'Boreal', 'Arid', 'Boreal', 'Arid', 'Temperate', 'Temperate', 'Boreal', 'Boreal', 'Arid', 'Arid', 'Arid', 'Arid', 'Temperate', 'Temperate', 'Temperate', 'Temperate', 'Boreal', 'Boreal', 'Polar', 'Boreal', 'Boreal', 'Boreal', 'Temperate'),
     "koppen_fine" = c('Dfb', 'Dfb', 'Dfa', 'Dfa', 'Cfa', 'Cfa', 'Cfa', 'Cfa', 'Aw', 'Aw', 'Dfb', 'Dfb', 'Dfb', 'Dfa', 'Dfa', 'Dfa', 'Cfa', 'Cfa', 'Dfb', 'Cfa', 'Cfa', 'Cfa', 'Dwb', 'Dwb', 'Dwa', 'BSk', 'Dfc', 'BSk', 'Cfa', 'Cfa', 'Dfb', 'Dfc', 'BSk', 'BSh', 'BWk', 'BSk', 'Csb', 'Csb', 'Csa', 'Csa', 'Dsb', 'Dfc', 'ET', 'Dfc', 'Dfc', 'Dfc', 'Cfb'),
     "siteID" = c('HARV', 'BART', 'SCBI', 'BLAN', 'SERC', 'OSBS', 'DSNY', 'JERC', 'GUAN', 'LAJA', 'UNDE', 'STEI', 'TREE', 'KONZ', 'KONA', 'UKFS', 'ORNL', 'GRSM', 'MLBS', 'TALL', 'DELA', 'LENO', 'WOOD', 'DCFS', 'NOGP', 'CPER', 'RMNP', 'STER', 'CLBJ', 'OAES', 'YELL', 'NIWO', 'MOAB', 'SRER', 'JORN', 'ONAQ', 'WREF', 'ABBY', 'SJER', 'SOAP', 'TEAK', 'TOOL', 'BARR', 'BONA', 'DEJU', 'HEAL', 'PUUM'),
     "siteType" = c('Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial', 'Relocatable Terrestrial', 'Relocatable Terrestrial', 'Core Terrestrial'),
@@ -1803,7 +1709,7 @@ npe_site_ids <- function(by = NA, domain = NA, type = NA, aridity=NA, koppen=NA)
     "ai" = c(1.08410927596454, 1.31410357142857, 0.849784615384615, 0.787831148191798, 0.811638850336408, 0.790833333333333, 0.684451515151515, 0.828816666666667, 0.51492, 0.551633333333333, 0.95566, 0.913493179783889, 0.884850566524963, 0.575726923076923, 0.5695, 0.683575, 0.953840740740741, 1.19839423076923, 0.924217583681487, 0.973891549295775, 0.908614285714286, 0.983518201965764, 0.366794117647059, 0.379916806861188, 0.334770263282546, 0.212731313131313, 0.354683044307244, 0.249034848629603, 0.46629375, 0.354155555555556, 0.453812389380531, 0.48867619047619, 0.175980519480519, 0.175426116838488, 0.116921666666667, 0.176280769230769, 1.9526, 2.280268, 0.249885185185185, 0.42392, 0.500568055555556, 0.54825251396648, 0.467794827586207, 0.500236438942441, 0.46619512195122, 0.709120512820513, 1.909385)
     )
   # all
-  if(is.na(by))return(warning("please specify using the 'by' argument (e.g. by = 'domain')"))
+  if(is.na(by))return(warning("please specify which sites you want using the 'by' argument (e.g. by = 'domain')"))
 
   if(by == "all") return(unique(sites$siteID))
 

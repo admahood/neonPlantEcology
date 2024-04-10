@@ -84,6 +84,8 @@ plot(sp_jorn, col = "gold", add=T)
 
 ## NMDS
 
+The following code reproduces figure 3 in Mahood et al 2024 (reference ).
+
 ```{r nmds, fig.width=7.5, fig.height=6}
 nmds <- metaMDS(comm,trace = F)
 
@@ -150,7 +152,7 @@ dl <- di|>
 
 p3<- ggplot(dl, aes(x = shannon, y = site, fill = origin)) +
   geom_bar(stat = 'identity', color = "black", lwd = .2) +
-  xlab("Shannon-Weaver Diveristy")
+  xlab("Shannon-Weiner Diveristy")
 
 ```
 

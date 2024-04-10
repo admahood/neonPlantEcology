@@ -1,4 +1,7 @@
 # package-wide setup
+packageStartupMessage("Welcome to neonPlantEcology!\n
+                      Type vignette('neonPlantEcology') for a quick orientation.\n
+                      Please report any bugs, other issues, or desires for future capabilities to https://github.com/admahood/neonPlantEcology/issues")
 
 
 # solving the note on unused imports (we do in fact use these packages for)
