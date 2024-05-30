@@ -2,7 +2,7 @@ Package: neonPlantEcology
 Type: Package
 Title: Process NEON Plant Data for Ecological Analysis
 Version: 1.6.1
-Date: 2024-04-09
+Date: 2024-05-30
 Authors@R: c(
   person("Adam", "Mahood", email = "admahood@gmail.com",role = c("aut", "cre")),
   person("Jacob", "Macdonald", role = "ctb"), 
