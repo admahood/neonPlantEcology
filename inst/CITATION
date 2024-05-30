@@ -1,0 +1,11 @@
+bibentry(
+  "Article",
+  title = "{neonPlantEcology}: an R package for preparing NEON plant data for use in ecological research",
+  author = "Adam L. Mahood, Ranjan Muthukrishnan, Jacob A. Macdonald, David T. Barnett, Eric R. Sokol, Samuel M. Simkin",
+  year = 2024,
+  journal = "Ecological Modelling",
+  volume = 493,
+  number = 110750,
+  pages = 6,
+  doi = "10.1016/j.ecolmodel.2024.110750",
+)
