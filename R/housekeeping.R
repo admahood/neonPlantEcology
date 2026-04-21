@@ -2,6 +2,9 @@
 packageStartupMessage(
   paste0("Welcome to neonPlantEcology!\n",
          "Type vignette('neonPlantEcology') for a quick orientation.\n",
+         "In the summer of 2026, NEON data users will be required to create a user account and either sign in or use an API token to download NEON data.\n",
+         "See the following link for more information:\n",
+         "https://www.neonscience.org/impact/observatory-blog/upcoming-required-logins-and-data-licensing-updates",
          "Please report any bugs, other issues, or desires for future capabilities to https://github.com/admahood/neonPlantEcology/issues")
   )
 
