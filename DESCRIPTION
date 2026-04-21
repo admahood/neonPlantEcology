@@ -4,7 +4,7 @@ Title: Process NEON Plant Data for Ecological Analysis
 Version: 1.6.2
 Date: 2024-05-30
 Authors@R: c(
-  person("Adam", "Mahood", email = "admahood@gmail.com",role = c("aut", "cre")),
+  person("Adam", "Mahood", email = "admahood@duck.com",role = c("aut", "cre")),
   person("Jacob", "Macdonald", role = "ctb"), 
   person("Ranjan", "Muthukrishnan", role = "ctb"))
 Maintainer: Adam Mahood <admahood@gmail.com>
@@ -25,7 +25,7 @@ Imports: neonUtilities,
          tidyr,
          ggpubr,
          utils
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.3
 Suggests: 
     knitr,
     rmarkdown
