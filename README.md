@@ -1,4 +1,6 @@
-[![DOI](https://zenodo.org/badge/268667267.svg)](https://zenodo.org/badge/latestdoi/268667267) [![](https://cranlogs.r-pkg.org/badges/neonPlantEcology)](https://cran.rstudio.com/web/packages/neonPlantEcology/index.html)
+[![DOI](https://zenodo.org/badge/268667267.svg)](https://zenodo.org/badge/latestdoi/268667267)
+
+[![](https://cranlogs.r-pkg.org/badges/neonPlantEcology)](https://cran.rstudio.com/web/packages/neonPlantEcology/index.html)
 
 # neonPlantEcology
 
